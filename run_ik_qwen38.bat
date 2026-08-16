@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 REM Обёртка запуска ik_llama.cpp сервера для Qwen3.8-27B (RTX 5060 Ti 16GB, 64k ctx) на :8080
 REM Гермес цепляется к нему как к OpenAI-совместимому провайдеру ikllama (base_url http://localhost:8080/v1)
 setlocal
