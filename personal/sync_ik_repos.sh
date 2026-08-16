@@ -84,8 +84,10 @@ build_snapshot_ff() {
   git checkout -q -B "$SNAP_BRANCH" "$base"
   git read-tree "$src"
   git checkout-index -a -f
-  if git ls-tree -r --name-only "$base" | grep -qE "^personal/"; then
-    git checkout -q "$base" -- personal PRIVATE_REPO_README.md 2>/dev/null || true
+  # ЛИЧНЫЙ слой берём из ЛОКАЛЬНОГО main (там самые свежие правки personal/),
+  # НЕ из $base (private/main), иначе правки personal теряются при каждом снимке
+  if git ls-tree -r --name-only main | grep -qE "^personal/"; then
+    git checkout -q main -- personal PRIVATE_REPO_README.md 2>/dev/null || true
   fi
   clean_junk
   git add -A
