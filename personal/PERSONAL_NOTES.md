@@ -55,6 +55,44 @@ still enough for hard tasks). 15 latest messages remain compression-protected.
 ⚠️ Fix requires a **server restart** (`llama-server.exe`) to take effect —
 the running instance still holds the old 32000 until then.
 
+## ✅ Resolved incident — `ngram_mod n=12 is too small` warning (fixed 2026-08-16)
+
+**Symptom (server log):** at startup with `--spec-type ngram-mod:n_max=2`:
+```
+common_speculative_init: initialized ngram_mod with n=12, size=4194304 (16.000 MB)
+common_speculative_init: ngram_mod n=12 is too small - poor quality is possible
+```
+
+**What it is:** speculative decoding (SD) — the server tries to guess several
+tokens ahead and verifies them in one pass. `ngram-mod` is the n-gram variant
+(no draft model needed). `n_max=2` = only 2 tokens guessed per step; `n` (the
+n-gram template length) was left at default `n=12`.
+
+**Does NOT affect:**
+- Answer correctness / text quality — SD is mathematically proven to leave the
+  model's output **bit-for-bit identical**; it only changes speed.
+- Server stability — the warning is non-blocking; server ran fine.
+
+**Does affect:** speed only (and marginally — `n_max=2` gives almost no gain,
+while draft reconciliation overhead can even slow things down). VRAM: +16 MB.
+
+**Benchmarks (evidence):** unsloth Qwen3.6-35B test (April 2026, post PR #19493)
+ran a 19-config SD matrix — **no ngram variant gave a net speedup** (decode
+−3…12 % even at 100 % draft acceptance, due to overhead). On modern Qwen models
+ngram-SD is often **net-negative**.
+
+**Options considered:**
+- **A (CHOSEN):** remove `--spec-type ngram-mod:n_max=2` entirely → plain
+  single-token generation; likely slightly faster + cleaner config.
+- **B:** tune SD properly — `--spec-type ngram-mod:n_max=16,n_min=2,ngram_size_n=24`
+  (real chance to guess long chunks, but no guaranteed gain on Qwen).
+- **C:** leave as-is (warning is harmless).
+
+**Action taken:** Option A — flag removed from `run_ik_qwen38.bat`, server
+restarted, warning gone. Documented in public `BUILDING_RTX5060Ti.md` (§14, #10)
+and here. See also the live-process confirmation that reasoning-budget=16000
+is in effect (read via `Get-CimInstance Win32_Process` on `llama-server.exe`).
+
 ## Credits
 
 - Engine: `ikawrakow/ik_llama.cpp` (MIT).
