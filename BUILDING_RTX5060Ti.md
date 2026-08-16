@@ -220,11 +220,10 @@ echo === Запуск ik_llama.cpp сервера: Qwen3.8-27B, ctx 65536, по�
   -a Qwen3_8-27B ^
   --ctx-size 65536 --n-gpu-layers 99 ^
   --cache-type-k q4_0 --cache-type-v q4_0 ^
-  --spec-type ngram-mod:n_max=2 ^
   --batch-size 512 --ubatch-size 128 ^
   --flash-attn on --merge-qkv -khad -vhad ^
   --host 127.0.0.1 --port 8080 --metrics --jinja ^
-  --reasoning on --reasoning-format none --reasoning-budget 32000 ^
+  --reasoning on --reasoning-format none --reasoning-budget 16000 ^
   --chat-template-kwargs "{\"preserve_thinking\": true, \"reasoning_effort\": \"medium\"}" ^
   --temp 0.6 --top-k 20 --min-p 0.05 --top-p 0.95 --repeat-penalty 1.05
 endlocal
@@ -264,7 +263,7 @@ taskkill /F /IM llama-server.exe
 | `--n-gpu-layers 99` | Все слои на GPU | 99 = «все». Меньше = часть на CPU (медленнее) |
 | `--cache-type-k q4_0` | KV-cache K в q4_0 | Компактный KV: 16GB VRAM не держит 27B + KV@64K в f16 |
 | `--cache-type-v q4_0` | KV-cache V в q4_0 | То же |
-| `--spec-type ngram-mod:n_max=2` | Speculative decoding | N-граммы ускоряют генерацию |
+| *`--spec-type ngram-mod`* | ~~Speculative decoding~~ | **УБРАН 2026-08-16** — см. раздел 14, п.10 |
 | `--batch-size 512` | Размер батча prompt | Быстрый prompt processing |
 | `--ubatch-size 128` | Размер под-батча | Баланс скорость/память |
 | `--flash-attn on` | Flash attention | Экономия VRAM + скорость |
@@ -277,7 +276,7 @@ taskkill /F /IM llama-server.exe
 | `--jinja` | Jinja-шаблоны | Чат-шаблоны модели |
 | `--reasoning on` | Включить reasoning | Для reasoning-моделей |
 | `--reasoning-format none` | Формат reasoning | Без специальных маркеров |
-| `--reasoning-budget 32000` | Бюджет reasoning | Максимум токенов на reasoning |
+| `--reasoning-budget 16000` | Бюджет reasoning | Максимум токенов на reasoning (снижен с 32000 → 16000 для предотвращения переполнения ctx, см. раздел 14) |
 | `--chat-template-kwargs` | Параметры шаблона | `preserve_thinking` + `reasoning_effort` |
 | `--temp 0.6` | Температура | Баланс креативность/детерминизм |
 | `--top-k 20` | Top-K | 20 лучших токенов |
@@ -488,6 +487,24 @@ lms ls
    `Qwen3_8-27B`, не `Qwen3.8-27B`.
 9. **Первый запрос в новой сессии** может вернуть «модель не готова» — это прогрев
    слота/KV, второй запрос уже отвечает нормально. Не путать с ошибкой.
+10. **`--spec-type ngram-mod` убран (инцидент 2026-08-16).** При запуске с
+   `--spec-type ngram-mod:n_max=2` сервер выдавал предупреждение
+   `ngram_mod n=12 is too small - poor quality is possible` (длина шаблона
+   n-граммы взялась дефолтная `n=12`, а `n_max=2` — только 2 токена спекуляции
+   за шаг). Суть: спекулятивная декодинг n-граммами НЕ меняет вывод модели
+   (текст бит-в-бит тот же), влияет только на скорость. Но при `n_max=2`
+   выигрыша почти нет, а накладные расходы на согласование черновиков могут
+   замедлять. Бенчмарки (unsloth, Qwen3.6-35B, апрель 2026) показали, что ngram-SD
+   на Qwen-семействе **часто net-negative** (декод −3…12 %). Симптомы/варианты:
+   - **Симптом:** не ошибка, а мягкое предупреждение; на качество ответа и
+     стабильность сервера НЕ влияет; VRAM — +16 МБ под буфер ngram.
+   - **Вариант А (ПРИНЯТ):** убрать флаг `--spec-type ngram-mod:n_max=2` совсем →
+     честная однотокенная генерация; вероятно чуть быстрее + чище конфиг.
+   - **Вариант Б:** настроить «по науке» — `--spec-type ngram-mod:n_max=16,n_min=2,ngram_size_n=24`
+     (реальный шанс угадывать длинные куски, но профит на Qwen не гарантирован).
+   - **Вариант В:** оставить как есть (предупреждение безвредно).
+   **Итог:** выбран Вариант А — флаг удалён из `run_ik_qwen38.bat`; сервер
+   перезапущен, предупреждение исчезло.
 
 ## 15. Лицензия
 

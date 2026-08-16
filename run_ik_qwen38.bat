@@ -2,6 +2,7 @@
 chcp 65001 >nul
 REM Обёртка запуска ik_llama.cpp сервера для Qwen3.8-27B (RTX 5060 Ti 16GB, 64k ctx) на :8080
 REM Гермес цепляется к нему как к OpenAI-совместимому провайдеру ikllama (base_url http://localhost:8080/v1)
+REM --spec-type ngram-mod убран 2026-08-16: сервер жаловался "ngram_mod n=12 is too small", бенчмарки показывают net-negative на Qwen. См. BUILDING_RTX5060Ti.md (раздел 14) и personal/PERSONAL_NOTES.md
 setlocal
 set PATH=C:/Program Files/CMake/bin;C:/Python314/Scripts;%PATH%
 
@@ -26,7 +27,6 @@ echo === (перед запуском выгрузите модель из LM St
   -a Qwen3_8-27B ^
   --ctx-size 65536 --n-gpu-layers 99 ^
   --cache-type-k q4_0 --cache-type-v q4_0 ^
-  --spec-type ngram-mod:n_max=2 ^
   --batch-size 512 --ubatch-size 128 ^
   --flash-attn on --merge-qkv -khad -vhad ^
   --host 127.0.0.1 --port 8080 --metrics --jinja ^
