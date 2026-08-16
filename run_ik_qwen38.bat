@@ -29,7 +29,7 @@ echo === (перед запуском выгрузите модель из LM St
   --batch-size 512 --ubatch-size 128 ^
   --flash-attn on --merge-qkv -khad -vhad ^
   --host 127.0.0.1 --port 8080 --metrics --jinja ^
-  --reasoning on --reasoning-format none --reasoning-budget 32000 ^
+  --reasoning on --reasoning-format none --reasoning-budget 16000 ^
   --chat-template-kwargs "{\"preserve_thinking\": true, \"reasoning_effort\": \"medium\"}" ^
   --temp 0.6 --top-k 20 --min-p 0.05 --top-p 0.95 --repeat-penalty 1.05
 endlocal
