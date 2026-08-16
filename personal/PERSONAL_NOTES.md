@@ -31,23 +31,29 @@ Build result marker: `BUILD_OK` printed at the end of `build_ik_llama.bat`.
 | stock llama.cpp (LM Studio) | 3.31 | GDN layers on CPU, no CUDA kernels |
 | **ik_llama.cpp (this build)** | **25.45** | ×7.7 — all layers + KV on GPU |
 
-## ⚠️ Known incident — context overflow at ~47 K tokens
+## ✅ Resolved incident — context overflow at ~47 K tokens (fixed 2026-08-16)
 
-**Symptom (Hermes):** `Context length exceeded (47,126 tokens). Cannot
+**Symptom was (Hermes):** `Context length exceeded (47,126 tokens). Cannot
 compress further.`
 
-**Root cause:** `run_ik_qwen38.bat` launches with
+**Root cause:** `run_ik_qwen38.bat` launched with
 `--reasoning-budget 32000` **and** `--ctx-size 65536`. The reasoning budget
-shares the *same* `n_ctx` pool as the input, so only ~30 K remains for
-history + system prompt. Long chats fill that and the compressor (blocked by
-`compression.protect_last_n: 20`) cannot shrink further.
+shares the *same* `n_ctx` pool as the input, so only ~30 K remained for
+history + system prompt. Long chats filled that and the compressor (blocked by
+`compression.protect_last_n: 20`) could not shrink further.
 
-**Fix (recommended, NOT yet applied):** either
-- lower `--reasoning-budget` to `8192` (or drop it), **or**
-- reduce `compression.protect_last_n` in `config.yaml`.
+**Applied fix (agreed with user):**
+- `run_ik_qwen38.bat`: `--reasoning-budget 32000` → **`16000`**
+  (frees +16000 tokens for history).
+- `hermes config set compression.protect_last_n 15` (from 20) —
+  compressor can now pull 5 more tail messages.
 
-Action: apply one of the above on the next server restart. It only takes
-effect on launch, so the running instance is unaffected until then.
+**Effect:** crash threshold moved from ~47 K to ~63 K — effectively never
+hits under the "ctx ≥64000" rule. Reasoning stays on (16000 is 2× smaller but
+still enough for hard tasks). 15 latest messages remain compression-protected.
+
+⚠️ Fix requires a **server restart** (`llama-server.exe`) to take effect —
+the running instance still holds the old 32000 until then.
 
 ## Credits
 
