@@ -22,9 +22,11 @@ if not exist "%MODEL%" (
 
 echo === Запуск ik_llama.cpp сервера: Qwen3.8-27B, ctx 65536, порт 8080 ===
 echo === (перед запуском выгрузите модель из LM Studio: lms unload) ===
+echo parallel=1: единый слот 65536 для Гермеса (крон ждёт чат)
 "%IK%" ^
   -m "%MODEL%" ^
   -a Qwen3_8-27B ^
+  --parallel 1 ^
   --ctx-size 65536 --n-gpu-layers 99 ^
   --cache-type-k q4_0 --cache-type-v q4_0 ^
   --batch-size 512 --ubatch-size 128 ^
