@@ -162,3 +162,10 @@ a.out
 a.out.*
 .dev
 .github
+
+# API key for llama-server (LAN access) — NEVER commit
+ik_api_key.txt
+
+# Local backup artifacts (never commit)
+*.bak*
+rollback-backup*/

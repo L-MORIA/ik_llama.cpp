@@ -4,10 +4,19 @@ REM Обёртка запуска ik_llama.cpp сервера для Qwen3.8-27B
 REM Гермес цепляется к нему как к OpenAI-совместимому провайдеру ikllama (base_url http://localhost:8080/v1)
 REM --spec-type ngram-mod убран 2026-08-16: сервер жаловался "ngram_mod n=12 is too small", бенчмарки показывают net-negative на Qwen. См. BUILDING_RTX5060Ti.md (раздел 14) и personal/PERSONAL_NOTES.md
 setlocal
+REM === Конкуренты на :8081 (Qwen3.6 MTP) и :8082 (Qwen3.8 APEX MTP) - остановить перед запуском ===
+for %%P in (8081 8082) do (
+  for /f "tokens=5" %%a in ('netstat -ano ^| findstr /R /C:":%%P .*LISTENING"') do (
+    tasklist /FI "PID eq %%a" /FO CSV /NH 2>nul | findstr /I /C:"llama-server.exe" >nul && (
+      taskkill /F /PID %%a >nul 2>&1 && echo [OK] Остановлен соседний llama-server на порту %%P
+    )
+  )
+)
+timeout /t 3 /nobreak >nul
 set PATH=C:/Program Files/CMake/bin;C:/Python314/Scripts;%PATH%
 
 set IK=F:/ik_llama.cpp/build/bin/llama-server.exe
-set MODEL=G:/MODEL-LM-STUDIO/cHunter789/Qwen3.8-27B-i1-IQ4_KS_KT-GGUF/Qwen3.8-27B.i1-IQ4_KT-attn_qkv-IQ4_KS.gguf
+set MODEL=F:/models/qwen38/cHunter789/Qwen3.8-27B-i1-IQ4_KS_KT-GGUF/Qwen3.8-27B.i1-IQ4_KT-attn_qkv-IQ4_KS.gguf
 
 if not exist "%IK%" (
   echo [ERROR] llama-server.exe не собран: %IK%
@@ -33,6 +42,7 @@ echo parallel=1: единый слот 65536 для Гермеса (крон ж�
   --flash-attn on --merge-qkv -khad -vhad ^
   --host 127.0.0.1 --port 8080 --metrics --jinja ^
   --reasoning on --reasoning-format none --reasoning-budget 16000 ^
+  -n 20000 ^
   --chat-template-kwargs "{\"preserve_thinking\": true, \"reasoning_effort\": \"medium\"}" ^
   --temp 0.6 --top-k 20 --min-p 0.05 --top-p 0.95 --repeat-penalty 1.05
 endlocal
