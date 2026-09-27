@@ -168,9 +168,6 @@ common_params_speculative common_params_speculative::with_stage_overrides(const 
     if (stage.has_mtp_heads_override()) {
         result.mtp_heads = stage.mtp_heads;
     }
-    if (stage.has_dflash_cross_ctx_override()) {
-        result.dflash_cross_ctx = stage.dflash_cross_ctx;
-    }
     if (stage.has_ngram_size_n_override()) {
         result.ngram_size_n = stage.ngram_size_n;
         result.ngram_mod.reset();
@@ -321,9 +318,6 @@ bool common_speculative_validate_chain(const common_params_speculative & params,
             return fail(common_speculative_type_to_str(stage.type) + " speculative stage requires a draft model or draft params");
         }
 
-        if (common_speculative_type_is_dflash_family(stage.type) && stage_params.dflash_cross_ctx < 1) {
-            return fail(common_speculative_type_to_str(stage.type) + " speculative stage requires cross_ctx >= 1");
-        }
     }
 
     if (resolved.size() == 2) {
@@ -956,13 +950,6 @@ static void common_speculative_stage_apply_kv(
         stage.mtp_heads = std::stoi(value_raw);
         if (stage.mtp_heads < 0) {
             throw std::invalid_argument("speculative stage mtp_heads must be >= 0");
-        }
-        return;
-    }
-    if (key == "cross_ctx" || key == "dflash_cross_ctx") {
-        stage.dflash_cross_ctx = std::stoi(value_raw);
-        if (stage.dflash_cross_ctx < 1) {
-            throw std::invalid_argument("speculative stage dflash cross_ctx must be at least 1");
         }
         return;
     }
@@ -1952,8 +1939,16 @@ bool gpt_params_find_arg(int argc, char ** argv, const std::string & arg, gpt_pa
         params.fused_idx_topk = true;
         return true;
     }
+    if (arg == "-no-fidx" || arg == "--no-fused-indexer-topk") {
+        params.fused_idx_topk = false;
+        return true;
+    }
     if (arg == "--swa-compress") {
         params.swa_compress = true;
+        return true;
+    }
+    if (arg == "-dsv4ls" || arg == "--dsv4-legacy-state") {
+        params.dsv4_legacy_state = true;
         return true;
     }
     if (arg == "-dsatk" || arg == "--dsa-top-k") {
@@ -2191,6 +2186,10 @@ bool gpt_params_find_arg(int argc, char ** argv, const std::string & arg, gpt_pa
     if (arg == "--defer-experts") {
         params.defer_experts = true;
         params.warmup = false;
+        return true;
+    }
+    if (arg == "--defer-ple") {
+        params.defer_ple = true;
         return true;
     }
     if (arg == "--prefetch-experts") {
@@ -2860,6 +2859,16 @@ bool gpt_params_find_arg(int argc, char ** argv, const std::string & arg, gpt_pa
         params.ctx_checkpoints_tolerance = std::stoi(argv[i]);
         return true;
     }
+    if (arg == "--ctx-ckpt-spill-dir" || arg == "--ctx-checkpoints-spill-dir") {
+        CHECK_ARG
+        params.ctx_checkpoint_spill_dir = argv[i];
+        return true;
+    }
+    if (arg == "--ctx-ckpt-live-n" || arg == "--ctx-checkpoints-live-n") {
+        CHECK_ARG
+        params.ctx_checkpoint_ram_live = std::stoi(argv[i]);
+        return true;
+    }
     if (arg == "-ctx-ckpt-e" || arg == "--ctx-checkpoints-eviction") {
         CHECK_ARG
         params.ctx_checkpoint_eviction= common_checkpoint_eviction_from_name(std::string(argv[i]));
@@ -3071,14 +3080,16 @@ void gpt_params_print_usage(int /*argc*/, char ** argv, const gpt_params & param
                                                                         "path to dynamic lookup cache to use for lookup decoding (updated by generation)" });
 
     options.push_back({ "*",           "-c,    --ctx-size N",           "size of the prompt context (default: %d, 0 = loaded from model)", params.n_ctx });
-    options.push_back({ "*",           "-cd,   --ctx-size-draft N",     "size of the prompt context for the draft model (default: %d, 0 = loaded from model)", params.speculative.n_ctx });
+    options.push_back({ "*",           "-cd,   --ctx-size-draft N",     "size of the prompt context for the draft model (default: %d, 0 = inherits target context for DFlash/DSpark, otherwise loaded from model)", params.speculative.n_ctx });
 
     options.push_back({ "*",           "-ctx-ckpt N, --ctx-checkpoints N",           "max number of context checkpoints to create per slot (default: %d)",params.ctx_checkpoints_n});
+    options.push_back({ "*",           "--ctx-ckpt-spill-dir DIR, --ctx-checkpoints-spill-dir DIR",           "spill evicted checkpoints to DIR (NVMe) instead of dropping them; empty disables"});
+    options.push_back({ "*",           "--ctx-ckpt-live-n N, --ctx-checkpoints-live-n N",           "max checkpoints with resident data when spill is on (default: %d)",params.ctx_checkpoint_ram_live});
     options.push_back({ "*",           "-ctx-ckpt-i N, --ctx-checkpoints-interval N",  "minimum number of tokens between each context checkpoint.  (default: %d, <=0 disable)",params.ctx_checkpoints_interval});
     options.push_back({ "*",           "-ctx-ckpt-t N, --ctx-checkpoints-tolerance N", "the number of tokens before the full prompt to create the checkpoint.  (default: %d, <=0 disable)",params.ctx_checkpoints_tolerance});
     options.push_back({ "*",           "-ctx-ckpt-e NAME, --ctx-checkpoints-eviction NAME", "Eviction strategy for checkpoint. Accepts fifo, variance and auto. Auto defaults to variance. Variance preserves coverage and maintains uniform interval.  (default: variance)" });
     options.push_back({ "*",           "-cram, --cache-ram N",          "set the maximum cache size in MiB (default: %d, -1 - no limit, 0 - disable)",params.cache_ram_mib });
-    options.push_back({ "*",           "-crs,  --cache-ram-similarity N",           "max of similarity of prompt tokens to cache tokens that triggers prompt cache (default: %.2f).",params.cache_ram_similarity });
+    options.push_back({ "*",           "-crs,  --cache-ram-similarity N",           "minimum fraction of a cached entry that must match the new prompt for that entry to be reusable (default: %.2f).",params.cache_ram_similarity });
     options.push_back({ "*",           "-cram-n-min N, --cache-ram-n-min N",           "minimum number of the cached tokens that triggers prompt cache (default: %d).", params.cache_ram_n_min });
     options.push_back({ "*",           "-n,    --predict N",            "number of tokens to predict (default: %d, -1 = infinity, -2 = until context filled)", params.n_predict });
     options.push_back({ "*",           "-b,    --batch-size N",         "logical maximum batch size (default: %d)", params.n_batch });
@@ -3090,7 +3101,9 @@ void gpt_params_print_usage(int /*argc*/, char ** argv, const gpt_params & param
     options.push_back({ "*",           "-mla,  --mla-use",              "enable MLA (default: %d)", params.mla_attn });
     options.push_back({ "*",           "-dsa,  --dsa",                  "enable GLM DSA sparse attention (GLM-DSA arch only; default: %s)", params.dsa ? "enabled" : "disabled" });
     options.push_back({ "*",           "-fidx,  --fused-indexer-topk",  "enable the fused indexer topk op (DSA only; default: %s)", params.fused_idx_topk ? "enabled" : "disabled" });
+    options.push_back({ "*",           "-no-fidx, --no-fused-indexer-topk", "disable the fused indexer topk op (DSA only; default: %s)", params.fused_idx_topk ? "enabled" : "disabled" });
     options.push_back({ "*",           "        --swa-compress",         "allocate sliding-window layers at window size instead of n_ctx (default: %s)", params.swa_compress ? "enabled" : "disabled" });
+    options.push_back({ "*",           "-dsv4ls, --dsv4-legacy-state",   "write DeepSeek-V4 state in the legacy full-slice layout, byte-identical to main (default: %d)", params.dsv4_legacy_state });
     options.push_back({ "*",           "-dsatk, --dsa-top-k",           "DSA top-k override; <0 uses the model's configured indexer_top_k (default: %d)", params.dsa_top_k });
     options.push_back({ "*",           "-amb,  --attention-max-batch",  "max batch size for attention computations (default: %d)", params.attn_max_batch});
     options.push_back({ "*",           "-no-fmoe, --no-fused-moe",      "disable fused MoE (default: %s)", params.fused_moe_up_gate ? "enabled" : "disabled" });
@@ -3319,6 +3332,7 @@ void gpt_params_print_usage(int /*argc*/, char ** argv, const gpt_params & param
     options.push_back({ "*",           "-ncmoe, --n-cpu-moe N",          "keep MoE weights of the first N layers in CPU memory"});
     options.push_back({ "*",           "-thp,   --transparent-huge-pages", "use transparent huge pages on Linux"});
     options.push_back({ "*",           "       --defer-experts",        "defer expert mmap residency on Linux to reduce model load time"});
+    options.push_back({ "*",           "       --defer-ple",            "keep the per-layer token embedding on the file instead of resident in memory (Linux)"});
     options.push_back({ "*",           "       --prefetch-experts",     "stream mmap'd MoE expert weights into the page cache on Linux"});
     options.push_back({ "*",           "       --prefetch-experts-threads N",
                                                                         "number of expert prefetch workers, tune to drive speed/type (default: auto)"});
@@ -3389,12 +3403,12 @@ void gpt_params_print_usage(int /*argc*/, char ** argv, const gpt_params & param
                                                               "  --recurrent-ckpt-mode remains as a deprecated alias" });
     options.push_back({ "*", "--spec-type SPEC[:k=v,...]",      "canonical speculative stage entry; repeat for a supported two-stage chain.\n"
                                                               "types: none, draft, dflash, dspark, mtp, ngram-cache, ngram-simple, ngram-map-k, ngram-map-k4v, ngram-mod, suffix\n"
-                                                              "canonical keys: n_max,n_min,p_min,heads,cross_ctx,ngram_size_n,ngram_size_m,ngram_min_hits,suffix_min_match_len,suffix_max_depth,suffix_corpus\n"
+                                                              "canonical keys: n_max,n_min,p_min,heads,ngram_size_n,ngram_size_m,ngram_min_hits,suffix_min_match_len,suffix_max_depth,suffix_corpus\n"
                                                               "MTP heads: heads=1 is the default; heads>1 and heads=0 (all model heads) are experimental\n"
                                                               "for comma-bearing string values, quote the value inside the stage payload for normal shell use\n"
                                                               "if argv is passed directly without shell unescaping, the parser also accepts escaped commas as \\,\n"
                                                               "examples: --spec-type mtp:n_max=1,p_min=0.0\n"
-                                                              "          --model-draft draft.gguf --spec-type dflash:n_max=4,cross_ctx=512\n"
+                                                              "          --model-draft draft.gguf --spec-type dflash:n_max=4\n"
                                                               "          --spec-type ngram-mod:n_max=64,n_min=2,ngram_size_n=8 --spec-type mtp:n_max=1,p_min=0.0\n"
                                                               "          --spec-type \"suffix:n_max=16,n_min=2,suffix_min_match_len=5,suffix_max_depth=64,suffix_corpus='/tmp/spec,type-corpus.json'\"\n"
                                                               "legacy --spec-stage, --draft-*, --spec-ngram-*, --suffix-* and -mtp flags are rejected" });
@@ -4072,6 +4086,14 @@ struct llama_init_result llama_init_from_gpt_params(gpt_params & params) {
         return iparams;
     }
 
+    // a predictor-only MTP GGUF has no main blocks, so it cannot be the target model
+    if (llama_model_mtp_package(model) == LLAMA_MTP_PACKAGE_COMPANION) {
+        fprintf(stderr, "%s: error: '%s' is an MTP companion, pass it with -md instead\n",
+                __func__, params.model.c_str());
+        llama_free_model(model);
+        return iparams;
+    }
+
     auto cparams = common_context_params_to_llama(params);
 
     llama_context * lctx = llama_init_from_model(model, cparams);
@@ -4287,6 +4309,7 @@ struct llama_model_params common_model_params_to_llama(const gpt_params & params
     mparams.mtp             = params.has_mtp || params.speculative.has_stage_type(COMMON_SPECULATIVE_TYPE_MTP);
     mparams.flash_attn      = params.flash_attn;
     mparams.defer_experts   = params.defer_experts;
+    mparams.defer_ple       = params.defer_ple;
     mparams.swa_compress    = params.swa_compress;
     if (params.kv_overrides.empty()) {
         mparams.kv_overrides = NULL;
@@ -4369,6 +4392,7 @@ struct llama_context_params common_context_params_to_llama(const gpt_params & pa
     cparams.dsa               = params.dsa;
     cparams.fused_idx_topk    = params.fused_idx_topk;
     cparams.swa_compress      = params.swa_compress;
+    cparams.dsv4_legacy_state = params.dsv4_legacy_state;
     cparams.dsa_top_k         = params.dsa_top_k;
     cparams.k_cache_hadamard  = params.k_cache_hadamard;
     cparams.v_cache_hadamard  = params.v_cache_hadamard;
@@ -5377,6 +5401,7 @@ void yaml_dump_non_result_info(FILE * stream, const gpt_params & params, const l
     fprintf(stream, "merge_qkv: %s # default: false\n", params.merge_qkv ? "true" : "false");
     fprintf(stream, "merge_up_gate_exps: %s # default: false\n", params.merge_up_gate_exps ? "true" : "false");
     fprintf(stream, "defer_experts: %s # default: false\n", params.defer_experts ? "true" : "false");
+    fprintf(stream, "defer_ple: %s # default: false\n", params.defer_ple ? "true" : "false");
     fprintf(stream, "prefetch_experts: %s # default: false\n", params.prefetch_experts ? "true" : "false");
     fprintf(stream, "prefetch_experts_threads: %d # default: 0 (auto)\n", params.prefetch_experts_threads);
     fprintf(stream, "max_extra_alloc: %d # default: 256\n", params.max_extra_alloc_MiB);

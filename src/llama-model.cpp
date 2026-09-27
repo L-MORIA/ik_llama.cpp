@@ -32,6 +32,40 @@ static const std::map<llm_arch, std::map<llm_tensor, std::string>> LLM_TENSOR_NA
             { LLM_TENSOR_FFN_GATE_UP_EXPS,"blk.%d.ffn_gate_up_exps" },
         },
     },
+{
+        LLM_ARCH_K2_HORIZON,
+        {
+            { LLM_TENSOR_TOKEN_EMBD,      "token_embd" },
+            { LLM_TENSOR_OUTPUT_NORM,     "output_norm" },
+            { LLM_TENSOR_OUTPUT,          "output" },
+            { LLM_TENSOR_ROPE_FREQS,      "rope_freqs" },
+            { LLM_TENSOR_ATTN_NORM,       "blk.%d.attn_norm" },
+            { LLM_TENSOR_ATTN_Q,          "blk.%d.attn_q" },
+            { LLM_TENSOR_ATTN_K,          "blk.%d.attn_k" },
+            { LLM_TENSOR_ATTN_V,          "blk.%d.attn_v" },
+            { LLM_TENSOR_ATTN_OUT,        "blk.%d.attn_output" },
+            { LLM_TENSOR_ATTN_ROT_EMBD,   "blk.%d.attn_rot_embd" },
+            { LLM_TENSOR_FFN_GATE_INP,    "blk.%d.ffn_gate_inp" },
+            { LLM_TENSOR_FFN_NORM,        "blk.%d.ffn_norm" },
+            { LLM_TENSOR_FFN_GATE,        "blk.%d.ffn_gate" },
+            { LLM_TENSOR_FFN_DOWN,        "blk.%d.ffn_down" },
+            { LLM_TENSOR_FFN_UP,          "blk.%d.ffn_up" },
+            { LLM_TENSOR_FFN_GATE_EXP,    "blk.%d.ffn_gate.%d" },
+            { LLM_TENSOR_FFN_DOWN_EXP,    "blk.%d.ffn_down.%d" },
+            { LLM_TENSOR_FFN_UP_EXP,      "blk.%d.ffn_up.%d" },
+            { LLM_TENSOR_FFN_GATE_EXPS,   "blk.%d.ffn_gate_exps" },
+            { LLM_TENSOR_FFN_DOWN_EXPS,   "blk.%d.ffn_down_exps" },
+            { LLM_TENSOR_FFN_UP_EXPS,     "blk.%d.ffn_up_exps" },
+            { LLM_TENSOR_FFN_GATE_UP_EXPS,"blk.%d.ffn_gate_up_exps" },
+            { LLM_TENSOR_ATTN_GATE,       "blk.%d.attn_gate" },
+            { LLM_TENSOR_ATTN_V_GATE,     "blk.%d.attn_v_gate" },
+            { LLM_TENSOR_ATTN_V_EXPS,     "blk.%d.attn_v_exps" },
+            { LLM_TENSOR_FFN_EXP_PROBS_B, "blk.%d.exp_probs_b" },
+            { LLM_TENSOR_FFN_GATE_SHEXP,  "blk.%d.ffn_gate_shexp" },
+            { LLM_TENSOR_FFN_DOWN_SHEXP,  "blk.%d.ffn_down_shexp" },
+            { LLM_TENSOR_FFN_UP_SHEXP,    "blk.%d.ffn_up_shexp" },
+        },
+    },
     {
         LLM_ARCH_MUSE_GLIMMER,
         {
@@ -482,6 +516,116 @@ static const std::map<llm_arch, std::map<llm_tensor, std::string>> LLM_TENSOR_NA
         },
     },
     {
+        LLM_ARCH_LFM2,
+        {
+            { LLM_TENSOR_TOKEN_EMBD,          "token_embd" },
+            { LLM_TENSOR_TOKEN_EMBD_NORM,     "token_embd_norm" },
+            { LLM_TENSOR_OUTPUT,              "output" },
+            { LLM_TENSOR_ATTN_NORM,           "blk.%d.attn_norm" },
+            { LLM_TENSOR_ATTN_Q_NORM,         "blk.%d.attn_q_norm" },
+            { LLM_TENSOR_ATTN_K_NORM,         "blk.%d.attn_k_norm" },
+            { LLM_TENSOR_ATTN_Q,              "blk.%d.attn_q" },
+            { LLM_TENSOR_ATTN_K,              "blk.%d.attn_k" },
+            { LLM_TENSOR_ATTN_V,              "blk.%d.attn_v" },
+            { LLM_TENSOR_ATTN_OUT,            "blk.%d.attn_output" },
+            { LLM_TENSOR_FFN_NORM,             "blk.%d.ffn_norm" },
+            { LLM_TENSOR_FFN_GATE,             "blk.%d.ffn_gate" },
+            { LLM_TENSOR_FFN_DOWN,             "blk.%d.ffn_down" },
+            { LLM_TENSOR_FFN_UP,               "blk.%d.ffn_up" },
+            { LLM_TENSOR_SHORTCONV_CONV,       "blk.%d.shortconv.conv" },
+            { LLM_TENSOR_SHORTCONV_INPROJ,     "blk.%d.shortconv.in_proj" },
+            { LLM_TENSOR_SHORTCONV_OUTPROJ,    "blk.%d.shortconv.out_proj" },
+        },
+    },
+    {
+        LLM_ARCH_LFM2MOE,
+        {
+            { LLM_TENSOR_TOKEN_EMBD,           "token_embd" },
+            { LLM_TENSOR_TOKEN_EMBD_NORM,      "token_embd_norm" },
+            { LLM_TENSOR_OUTPUT,               "output" },
+            { LLM_TENSOR_ATTN_NORM,            "blk.%d.attn_norm" },
+            { LLM_TENSOR_ATTN_Q_NORM,          "blk.%d.attn_q_norm" },
+            { LLM_TENSOR_ATTN_K_NORM,          "blk.%d.attn_k_norm" },
+            { LLM_TENSOR_ATTN_Q,               "blk.%d.attn_q" },
+            { LLM_TENSOR_ATTN_K,               "blk.%d.attn_k" },
+            { LLM_TENSOR_ATTN_V,               "blk.%d.attn_v" },
+            { LLM_TENSOR_ATTN_OUT,             "blk.%d.attn_output" },
+            { LLM_TENSOR_FFN_NORM,             "blk.%d.ffn_norm" },
+            { LLM_TENSOR_FFN_GATE,             "blk.%d.ffn_gate" },
+            { LLM_TENSOR_FFN_DOWN,             "blk.%d.ffn_down" },
+            { LLM_TENSOR_FFN_UP,               "blk.%d.ffn_up" },
+            { LLM_TENSOR_FFN_GATE_INP,         "blk.%d.ffn_gate_inp" },
+            { LLM_TENSOR_FFN_GATE_EXPS,        "blk.%d.ffn_gate_exps" },
+            { LLM_TENSOR_FFN_DOWN_EXPS,        "blk.%d.ffn_down_exps" },
+            { LLM_TENSOR_FFN_UP_EXPS,          "blk.%d.ffn_up_exps" },
+            { LLM_TENSOR_FFN_GATE_UP_EXPS,     "blk.%d.ffn_gate_up_exps" },
+            { LLM_TENSOR_FFN_EXP_PROBS_B,      "blk.%d.exp_probs_b" },
+            { LLM_TENSOR_SHORTCONV_CONV,       "blk.%d.shortconv.conv" },
+            { LLM_TENSOR_SHORTCONV_INPROJ,     "blk.%d.shortconv.in_proj" },
+            { LLM_TENSOR_SHORTCONV_OUTPROJ,    "blk.%d.shortconv.out_proj" },
+        },
+    },
+    {
+        LLM_ARCH_QWEN4EXP,
+        {
+            { LLM_TENSOR_TOKEN_EMBD,           "token_embd" },
+            { LLM_TENSOR_OUTPUT,               "output" },
+            { LLM_TENSOR_PER_LAYER_TOKEN_EMBD, "per_layer_token_embd" },
+            { LLM_TENSOR_HC_HEAD_NORM,         "output_hc_norm" },
+            { LLM_TENSOR_HC_HEAD_DOWN,         "output_hc_down" },
+            { LLM_TENSOR_HC_HEAD_UP,           "output_hc_up" },
+            { LLM_TENSOR_NEXTN_EH_PROJ,        "blk.%d.nextn.eh_proj" },
+            { LLM_TENSOR_NEXTN_ENORM,          "blk.%d.nextn.enorm" },
+            { LLM_TENSOR_NEXTN_HNORM,          "blk.%d.nextn.hnorm" },
+            { LLM_TENSOR_NEXTN_SHARED_HEAD_NORM, "blk.%d.nextn.shared_head_norm" },
+            { LLM_TENSOR_NEXTN_HC_HEAD_NORM,   "blk.%d.nextn.hc_head_norm" },
+            { LLM_TENSOR_NEXTN_HC_HEAD_DOWN,   "blk.%d.nextn.hc_head_down" },
+            { LLM_TENSOR_NEXTN_HC_HEAD_UP,     "blk.%d.nextn.hc_head_up" },
+            { LLM_TENSOR_ATTN_Q,               "blk.%d.attn_q" },
+            { LLM_TENSOR_ATTN_K,               "blk.%d.attn_k" },
+            { LLM_TENSOR_ATTN_V,               "blk.%d.attn_v" },
+            { LLM_TENSOR_ATTN_OUT,             "blk.%d.attn_output" },
+            { LLM_TENSOR_ATTN_Q_NORM,          "blk.%d.attn_q_norm" },
+            { LLM_TENSOR_ATTN_K_NORM,          "blk.%d.attn_k_norm" },
+            { LLM_TENSOR_ATTN_QKV,             "blk.%d.attn_qkv" },
+            { LLM_TENSOR_ATTN_GATE,            "blk.%d.attn_gate" },
+            { LLM_TENSOR_INDEXER_Q_PROJ,       "blk.%d.indexer.q_proj" },
+            { LLM_TENSOR_INDEXER_K_PROJ,       "blk.%d.indexer.k_proj" },
+            { LLM_TENSOR_INDEXER_Q_NORM,       "blk.%d.indexer.q_norm" },
+            { LLM_TENSOR_INDEXER_K_NORM,       "blk.%d.indexer.k_norm" },
+            { LLM_TENSOR_SSM_CONV1D,           "blk.%d.ssm_conv1d" },
+            { LLM_TENSOR_SSM_DT,               "blk.%d.ssm_dt" },
+            { LLM_TENSOR_SSM_A_NOSCAN,         "blk.%d.ssm_a" },
+            { LLM_TENSOR_SSM_ALPHA,            "blk.%d.ssm_alpha" },
+            { LLM_TENSOR_SSM_BETA,             "blk.%d.ssm_beta" },
+            { LLM_TENSOR_SSM_NORM,             "blk.%d.ssm_norm" },
+            { LLM_TENSOR_SSM_OUT,              "blk.%d.ssm_out" },
+            { LLM_TENSOR_HC_ATTN_NORM,         "blk.%d.hc_attn_norm" },
+            { LLM_TENSOR_HC_ATTN_DOWN,         "blk.%d.hc_attn_down" },
+            { LLM_TENSOR_HC_ATTN_UP,           "blk.%d.hc_attn_up" },
+            { LLM_TENSOR_HC_ATTN_INJECT,       "blk.%d.hc_attn_inject" },
+            { LLM_TENSOR_HC_FFN_NORM,          "blk.%d.hc_ffn_norm" },
+            { LLM_TENSOR_HC_FFN_DOWN,          "blk.%d.hc_ffn_down" },
+            { LLM_TENSOR_HC_FFN_UP,            "blk.%d.hc_ffn_up" },
+            { LLM_TENSOR_HC_FFN_INJECT,        "blk.%d.hc_ffn_inject" },
+            { LLM_TENSOR_PLE_KEY,              "blk.%d.ple_key" },
+            { LLM_TENSOR_PLE_VALUE,            "blk.%d.ple_value" },
+            { LLM_TENSOR_PLE_NORM_KEY,         "blk.%d.ple_norm_key" },
+            { LLM_TENSOR_PLE_NORM_QUERY,       "blk.%d.ple_norm_query" },
+            { LLM_TENSOR_PLE_NORM_CONV,        "blk.%d.ple_norm_conv" },
+            { LLM_TENSOR_PLE_CONV1D,           "blk.%d.ple_conv1d" },
+            { LLM_TENSOR_FFN_GATE_INP,         "blk.%d.ffn_gate_inp" },
+            { LLM_TENSOR_FFN_GATE_EXPS,        "blk.%d.ffn_gate_exps" },
+            { LLM_TENSOR_FFN_DOWN_EXPS,        "blk.%d.ffn_down_exps" },
+            { LLM_TENSOR_FFN_UP_EXPS,          "blk.%d.ffn_up_exps" },
+            { LLM_TENSOR_FFN_GATE_UP_EXPS,     "blk.%d.ffn_gate_up_exps" },
+            { LLM_TENSOR_FFN_GATE_INP_SHEXP,   "blk.%d.ffn_gate_inp_shexp" },
+            { LLM_TENSOR_FFN_GATE_SHEXP,       "blk.%d.ffn_gate_shexp" },
+            { LLM_TENSOR_FFN_DOWN_SHEXP,       "blk.%d.ffn_down_shexp" },
+            { LLM_TENSOR_FFN_UP_SHEXP,         "blk.%d.ffn_up_shexp" },
+        },
+    },
+    {
         LLM_ARCH_QWEN3NEXT,
         {
             { LLM_TENSOR_TOKEN_EMBD,         "token_embd" },
@@ -904,6 +1048,12 @@ static const std::map<llm_arch, std::map<llm_tensor, std::string>> LLM_TENSOR_NA
             { LLM_TENSOR_OUTPUT_NORM,          "output_norm" },
             { LLM_TENSOR_OUTPUT,               "output" },
             { LLM_TENSOR_ATTN_NORM,            "blk.%d.attn_norm" },
+            { LLM_TENSOR_ATTN_Q,               "blk.%d.attn_q" },
+            { LLM_TENSOR_ATTN_Q_NORM,          "blk.%d.attn_q_norm" },
+            { LLM_TENSOR_ATTN_K,               "blk.%d.attn_k" },
+            { LLM_TENSOR_ATTN_K_NORM,          "blk.%d.attn_k_norm" },
+            { LLM_TENSOR_ATTN_V,               "blk.%d.attn_v" },
+            { LLM_TENSOR_ATTN_OUT,             "blk.%d.attn_output" },
             { LLM_TENSOR_ATTN_SINKS,           "blk.%d.attn_sinks" },
             { LLM_TENSOR_ATTN_Q_A_NORM,        "blk.%d.attn_q_a_norm" },
             { LLM_TENSOR_ATTN_KV_A_NORM,       "blk.%d.attn_kv_a_norm" },
@@ -913,6 +1063,7 @@ static const std::map<llm_arch, std::map<llm_tensor, std::string>> LLM_TENSOR_NA
             { LLM_TENSOR_ATTN_OUT_A,           "blk.%d.attn_output_a" },
             { LLM_TENSOR_ATTN_OUT_B,           "blk.%d.attn_output_b" },
             { LLM_TENSOR_FFN_NORM,             "blk.%d.ffn_norm" },
+            { LLM_TENSOR_ATTN_POST_NORM,       "blk.%d.ffn_norm" },
             { LLM_TENSOR_FFN_GATE_INP,         "blk.%d.ffn_gate_inp" },
             { LLM_TENSOR_FFN_GATE_EXPS,        "blk.%d.ffn_gate_exps" },
             { LLM_TENSOR_FFN_DOWN_EXPS,        "blk.%d.ffn_down_exps" },
@@ -930,11 +1081,42 @@ static const std::map<llm_arch, std::map<llm_tensor, std::string>> LLM_TENSOR_NA
             { LLM_TENSOR_HC_FFN_BASE,          "blk.%d.hc_ffn_base" },
             { LLM_TENSOR_HC_FFN_FN,            "blk.%d.hc_ffn_fn" },
             { LLM_TENSOR_HC_FFN_SCALE,         "blk.%d.hc_ffn_scale" },
+            { LLM_TENSOR_FFN_GATE,             "blk.%d.ffn_gate" },
+            { LLM_TENSOR_FFN_DOWN,             "blk.%d.ffn_down" },
+            { LLM_TENSOR_FFN_UP,               "blk.%d.ffn_up" },
             { LLM_TENSOR_DFLASH_FC,            "fc" },
             { LLM_TENSOR_DFLASH_HIDDEN_NORM,   "enc.output_norm" },
             { LLM_TENSOR_DSPARK_MARKOV_W1,     "markov_w1" },
             { LLM_TENSOR_DSPARK_MARKOV_W2,     "markov_w2" },
             { LLM_TENSOR_DSPARK_CONF_PROJ,     "conf_proj" },
+        },
+    },
+    {
+        LLM_ARCH_DFLASH2,
+        {
+            { LLM_TENSOR_TOKEN_EMBD,             "token_embd" },
+            { LLM_TENSOR_OUTPUT_NORM,             "output_norm" },
+            { LLM_TENSOR_OUTPUT,                  "output" },
+            { LLM_TENSOR_ATTN_NORM,               "blk.%d.attn_norm" },
+            { LLM_TENSOR_ATTN_Q,                  "blk.%d.attn_q" },
+            { LLM_TENSOR_ATTN_Q_NORM,             "blk.%d.attn_q_norm" },
+            { LLM_TENSOR_ATTN_K,                  "blk.%d.attn_k" },
+            { LLM_TENSOR_ATTN_K_NORM,             "blk.%d.attn_k_norm" },
+            { LLM_TENSOR_ATTN_V,                  "blk.%d.attn_v" },
+            { LLM_TENSOR_ATTN_OUT,                "blk.%d.attn_output" },
+            { LLM_TENSOR_FFN_NORM,                "blk.%d.ffn_norm" },
+            { LLM_TENSOR_FFN_GATE,                "blk.%d.ffn_gate" },
+            { LLM_TENSOR_FFN_DOWN,                "blk.%d.ffn_down" },
+            { LLM_TENSOR_FFN_UP,                  "blk.%d.ffn_up" },
+            { LLM_TENSOR_DFLASH_FC,               "fc" },
+            { LLM_TENSOR_DFLASH_HIDDEN_NORM,      "enc.output_norm" },
+            { LLM_TENSOR_DFLASH_ATTN_CONV_BASE,   "blk.%d.attn_conv_base" },
+            { LLM_TENSOR_DFLASH_ATTN_CONV_PROJ,   "blk.%d.attn_conv_proj" },
+            { LLM_TENSOR_DFLASH_FFN_CONV_BASE,    "blk.%d.ffn_conv_base" },
+            { LLM_TENSOR_DFLASH_FFN_CONV_PROJ,    "blk.%d.ffn_conv_proj" },
+            { LLM_TENSOR_DFLASH_SELECTOR_PREV,    "selector_predecessor" },
+            { LLM_TENSOR_DFLASH_SELECTOR_NEXT,    "selector_successor" },
+            { LLM_TENSOR_DFLASH_SELECTOR_HIDDEN,  "selector_hidden" },
         },
     },
     {
@@ -1169,6 +1351,7 @@ static const std::map<llm_arch, std::map<llm_tensor, std::string>> LLM_TENSOR_NA
             { LLM_TENSOR_FFN_DOWN_SHEXP,         "blk.%d.ffn_down_shexp" },
             { LLM_TENSOR_FFN_UP_SHEXP,           "blk.%d.ffn_up_shexp" },
 	        { LLM_TENSOR_FFN_EXP_PROBS_B,        "blk.%d.exp_probs_b" },
+            { LLM_TENSOR_FFN_EXP_PROBS_B_VL,     "blk.%d.exp_probs_b_vl" },
             { LLM_TENSOR_FFN_GATE_TID2EID,       "blk.%d.ffn_gate_tid2eid" },
             { LLM_TENSOR_INDEXER_K_NORM,         "blk.%d.indexer.k_norm" },
             { LLM_TENSOR_INDEXER_PROJ,           "blk.%d.indexer.proj" },
@@ -1193,6 +1376,71 @@ static const std::map<llm_arch, std::map<llm_tensor, std::string>> LLM_TENSOR_NA
             { LLM_TENSOR_NEXTN_HNORM,            "blk.%d.nextn.hnorm" },
             { LLM_TENSOR_NEXTN_SHARED_HEAD_HEAD, "blk.%d.nextn.shared_head_head" },
             { LLM_TENSOR_NEXTN_SHARED_HEAD_NORM, "blk.%d.nextn.shared_head_norm" },
+        },
+    },
+    {
+        LLM_ARCH_DEEPSEEK41,
+        {
+            { LLM_TENSOR_TOKEN_EMBD,             "token_embd" },
+            { LLM_TENSOR_OUTPUT_NORM,            "output_norm" },
+            { LLM_TENSOR_OUTPUT,                 "output" },
+            { LLM_TENSOR_ATTN_NORM,              "blk.%d.attn_norm" },
+            { LLM_TENSOR_ATTN_SINKS,             "blk.%d.attn_sinks" },
+            { LLM_TENSOR_ATTN_Q_A_NORM,          "blk.%d.attn_q_a_norm" },
+            { LLM_TENSOR_ATTN_KV_A_NORM,         "blk.%d.attn_kv_a_norm" },
+            { LLM_TENSOR_ATTN_Q,                 "blk.%d.attn_q" },
+            { LLM_TENSOR_ATTN_Q_A,               "blk.%d.attn_q_a" },
+            { LLM_TENSOR_ATTN_Q_B,               "blk.%d.attn_q_b" },
+            { LLM_TENSOR_ATTN_KV_LATENT,         "blk.%d.attn_kv" },
+            { LLM_TENSOR_ATTN_OUT_A,             "blk.%d.attn_output_a" },
+            { LLM_TENSOR_ATTN_OUT_B,             "blk.%d.attn_output_b" },
+            { LLM_TENSOR_ATTN_COMP_KV,           "blk.%d.attn_compressor_kv" },
+            { LLM_TENSOR_ATTN_COMP_GATE,         "blk.%d.attn_compressor_gate" },
+            { LLM_TENSOR_ATTN_COMP_APE,          "blk.%d.attn_compressor_ape" },
+            { LLM_TENSOR_ATTN_COMP_NORM,         "blk.%d.attn_compressor_norm" },
+            { LLM_TENSOR_ATTN_OUT,               "blk.%d.attn_output" },
+            { LLM_TENSOR_FFN_NORM,               "blk.%d.ffn_norm" },
+            { LLM_TENSOR_FFN_GATE,               "blk.%d.ffn_gate" },
+            { LLM_TENSOR_FFN_UP,                 "blk.%d.ffn_up" },
+            { LLM_TENSOR_FFN_DOWN,               "blk.%d.ffn_down" },
+            { LLM_TENSOR_FFN_GATE_INP,           "blk.%d.ffn_gate_inp" },
+            { LLM_TENSOR_FFN_GATE_EXPS,          "blk.%d.ffn_gate_exps" },
+            { LLM_TENSOR_FFN_DOWN_EXPS,          "blk.%d.ffn_down_exps" },
+            { LLM_TENSOR_FFN_UP_EXPS,            "blk.%d.ffn_up_exps" },
+            { LLM_TENSOR_FFN_GATE_UP_EXPS,       "blk.%d.ffn_gate_up_exps" },
+            { LLM_TENSOR_FFN_GATE_INP_SHEXP,     "blk.%d.ffn_gate_inp_shexp" },
+            { LLM_TENSOR_FFN_GATE_SHEXP,         "blk.%d.ffn_gate_shexp" },
+            { LLM_TENSOR_FFN_DOWN_SHEXP,         "blk.%d.ffn_down_shexp" },
+            { LLM_TENSOR_FFN_UP_SHEXP,           "blk.%d.ffn_up_shexp" },
+            { LLM_TENSOR_FFN_EXP_PROBS_B,        "blk.%d.exp_probs_b" },
+            { LLM_TENSOR_FFN_GATE_TID2EID,       "blk.%d.ffn_gate_tid2eid" },
+            { LLM_TENSOR_INDEXER_K_NORM,         "blk.%d.indexer.k_norm" },
+            { LLM_TENSOR_INDEXER_PROJ,           "blk.%d.indexer.proj" },
+            { LLM_TENSOR_INDEXER_ATTN_K,         "blk.%d.indexer.attn_k" },
+            { LLM_TENSOR_INDEXER_ATTN_Q_B,       "blk.%d.indexer.attn_q_b" },
+            { LLM_TENSOR_INDEXER_COMP_KV,        "blk.%d.indexer_compressor_kv" },
+            { LLM_TENSOR_INDEXER_COMP_GATE,      "blk.%d.indexer_compressor_gate" },
+            { LLM_TENSOR_INDEXER_COMP_APE,       "blk.%d.indexer_compressor_ape" },
+            { LLM_TENSOR_INDEXER_COMP_NORM,      "blk.%d.indexer_compressor_norm" },
+            { LLM_TENSOR_HC_HEAD_BASE,           "output_hc_base" },
+            { LLM_TENSOR_HC_HEAD_FN,             "output_hc_fn" },
+            { LLM_TENSOR_HC_HEAD_SCALE,          "output_hc_scale" },
+            { LLM_TENSOR_HC_ATTN_BASE,           "blk.%d.hc_attn_base" },
+            { LLM_TENSOR_HC_ATTN_FN,             "blk.%d.hc_attn_fn" },
+            { LLM_TENSOR_HC_ATTN_SCALE,          "blk.%d.hc_attn_scale" },
+            { LLM_TENSOR_HC_FFN_BASE,            "blk.%d.hc_ffn_base" },
+            { LLM_TENSOR_HC_FFN_FN,              "blk.%d.hc_ffn_fn" },
+            { LLM_TENSOR_HC_FFN_SCALE,           "blk.%d.hc_ffn_scale" },
+            { LLM_TENSOR_NEXTN_EH_PROJ,          "blk.%d.nextn.eh_proj" },
+            { LLM_TENSOR_NEXTN_EMBED_TOKENS,     "blk.%d.nextn.embed_tokens" },
+            { LLM_TENSOR_NEXTN_ENORM,            "blk.%d.nextn.enorm" },
+            { LLM_TENSOR_NEXTN_HNORM,            "blk.%d.nextn.hnorm" },
+            { LLM_TENSOR_NEXTN_SHARED_HEAD_HEAD, "blk.%d.nextn.shared_head_head" },
+            { LLM_TENSOR_NEXTN_SHARED_HEAD_NORM, "blk.%d.nextn.shared_head_norm" },
+            { LLM_TENSOR_ENGRAM_EMBD,            "blk.%d.engram_embd" },
+            { LLM_TENSOR_ENGRAM_K,               "blk.%d.engram_k" },
+            { LLM_TENSOR_ENGRAM_Q,               "blk.%d.engram_q" },
+            { LLM_TENSOR_ENGRAM_WKV,             "blk.%d.engram_wkv" },
         },
     },
     {
@@ -1947,7 +2195,7 @@ static const std::map<llm_arch, std::map<llm_tensor, std::string>> LLM_TENSOR_NA
             { LLM_TENSOR_FFN_GATE_SHEXP,         "blk.%d.ffn_gate_shexp" },
             { LLM_TENSOR_FFN_DOWN_SHEXP,         "blk.%d.ffn_down_shexp" },
             { LLM_TENSOR_FFN_UP_SHEXP,           "blk.%d.ffn_up_shexp" },
-	        { LLM_TENSOR_FFN_EXP_PROBS_B,        "blk.%d.exp_probs_b" },
+            { LLM_TENSOR_FFN_EXP_PROBS_B,        "blk.%d.exp_probs_b" },
             { LLM_TENSOR_INDEXER_K_NORM,         "blk.%d.indexer.k_norm" },
             { LLM_TENSOR_INDEXER_PROJ,           "blk.%d.indexer.proj" },
             { LLM_TENSOR_INDEXER_ATTN_K,         "blk.%d.indexer.attn_k" },
@@ -1959,6 +2207,71 @@ static const std::map<llm_arch, std::map<llm_tensor, std::string>> LLM_TENSOR_NA
             { LLM_TENSOR_NEXTN_SHARED_HEAD_HEAD, "blk.%d.nextn.shared_head_head" },
             { LLM_TENSOR_NEXTN_SHARED_HEAD_NORM, "blk.%d.nextn.shared_head_norm" },
 
+        },
+    },
+    {
+        LLM_ARCH_GLM5NEXT,
+        {
+            { LLM_TENSOR_TOKEN_EMBD,             "token_embd" },
+            { LLM_TENSOR_OUTPUT_NORM,            "output_norm" },
+            { LLM_TENSOR_OUTPUT,                 "output" },
+            { LLM_TENSOR_ATTN_NORM,              "blk.%d.attn_norm" },
+            { LLM_TENSOR_FFN_NORM,               "blk.%d.ffn_norm" },
+            // KDA (kimi-k3 low-rank) layers: KDA q/k/v project to ssm_d_inner, out proj back to n_embd
+            { LLM_TENSOR_ATTN_Q,                 "blk.%d.attn_q" },
+            { LLM_TENSOR_ATTN_K,                 "blk.%d.attn_k" },
+            { LLM_TENSOR_ATTN_V,                 "blk.%d.attn_v" },
+            { LLM_TENSOR_ATTN_OUT,               "blk.%d.attn_output" },
+            { LLM_TENSOR_SSM_CONV1D_Q,           "blk.%d.ssm_conv1d_q" },
+            { LLM_TENSOR_SSM_CONV1D_K,           "blk.%d.ssm_conv1d_k" },
+            { LLM_TENSOR_SSM_CONV1D_V,           "blk.%d.ssm_conv1d_v" },
+            { LLM_TENSOR_SSM_F_A,                "blk.%d.ssm_f_a" },
+            { LLM_TENSOR_SSM_F_B,                "blk.%d.ssm_f_b" },
+            { LLM_TENSOR_SSM_G_A,                "blk.%d.ssm_g_a" },
+            { LLM_TENSOR_SSM_G_B,                "blk.%d.ssm_g_b" },
+            { LLM_TENSOR_SSM_BETA,               "blk.%d.ssm_beta" },
+            { LLM_TENSOR_SSM_A,                  "blk.%d.ssm_a" },
+            { LLM_TENSOR_SSM_DT,                 "blk.%d.ssm_dt" },
+            { LLM_TENSOR_SSM_NORM,               "blk.%d.ssm_norm" },
+            // MLA layers (nope-only absorbed)
+            { LLM_TENSOR_ATTN_Q_A,               "blk.%d.attn_q_a" },
+            { LLM_TENSOR_ATTN_Q_A_NORM,          "blk.%d.attn_q_a_norm" },
+            { LLM_TENSOR_ATTN_Q_B,               "blk.%d.attn_q_b" },
+            { LLM_TENSOR_ATTN_KV_A_MQA,          "blk.%d.attn_kv_a_mqa" },
+            { LLM_TENSOR_ATTN_KV_A_NORM,         "blk.%d.attn_kv_a_norm" },
+            { LLM_TENSOR_ATTN_K_B,               "blk.%d.attn_k_b" },
+            { LLM_TENSOR_ATTN_V_B,               "blk.%d.attn_v_b" },
+            // DSA lightning indexer + k-pool compressor
+            { LLM_TENSOR_INDEXER_K_NORM,         "blk.%d.indexer.k_norm" },
+            { LLM_TENSOR_INDEXER_PROJ,           "blk.%d.indexer.proj" },
+            { LLM_TENSOR_INDEXER_ATTN_K,         "blk.%d.indexer.attn_k" },
+            { LLM_TENSOR_INDEXER_ATTN_Q_B,       "blk.%d.indexer.attn_q_b" },
+            { LLM_TENSOR_INDEXER_COMP_GATE,      "blk.%d.indexer_compressor_gate" },
+            { LLM_TENSOR_INDEXER_COMP_APE,       "blk.%d.indexer_compressor_ape" },
+            // hyper-connections (mHC)
+            { LLM_TENSOR_HC_ATTN_FN,             "blk.%d.hc_attn_fn" },
+            { LLM_TENSOR_HC_ATTN_BASE,           "blk.%d.hc_attn_base" },
+            { LLM_TENSOR_HC_ATTN_SCALE,          "blk.%d.hc_attn_scale" },
+            { LLM_TENSOR_HC_FFN_FN,              "blk.%d.hc_ffn_fn" },
+            { LLM_TENSOR_HC_FFN_BASE,            "blk.%d.hc_ffn_base" },
+            { LLM_TENSOR_HC_FFN_SCALE,           "blk.%d.hc_ffn_scale" },
+            // dense-lead FFN + MoE (sigmoid, shared expert)
+            { LLM_TENSOR_FFN_GATE,               "blk.%d.ffn_gate" },
+            { LLM_TENSOR_FFN_DOWN,               "blk.%d.ffn_down" },
+            { LLM_TENSOR_FFN_UP,                 "blk.%d.ffn_up" },
+            { LLM_TENSOR_FFN_GATE_INP,           "blk.%d.ffn_gate_inp" },
+            { LLM_TENSOR_FFN_EXP_PROBS_B,        "blk.%d.exp_probs_b" },
+            { LLM_TENSOR_FFN_GATE_EXPS,         "blk.%d.ffn_gate_exps" },
+            { LLM_TENSOR_FFN_DOWN_EXPS,         "blk.%d.ffn_down_exps" },
+            { LLM_TENSOR_FFN_UP_EXPS,           "blk.%d.ffn_up_exps" },
+            { LLM_TENSOR_FFN_GATE_SHEXP,         "blk.%d.ffn_gate_shexp" },
+            { LLM_TENSOR_FFN_DOWN_SHEXP,         "blk.%d.ffn_down_shexp" },
+            { LLM_TENSOR_FFN_UP_SHEXP,           "blk.%d.ffn_up_shexp" },
+            // NextN / MTP tail (embed_tokens + shared_head_head are tied to trunk in this model)
+            { LLM_TENSOR_NEXTN_EH_PROJ,          "blk.%d.nextn.eh_proj" },
+            { LLM_TENSOR_NEXTN_ENORM,            "blk.%d.nextn.enorm" },
+            { LLM_TENSOR_NEXTN_HNORM,            "blk.%d.nextn.hnorm" },
+            { LLM_TENSOR_NEXTN_SHARED_HEAD_NORM, "blk.%d.nextn.shared_head_norm" },
         },
     },
     {
@@ -2142,6 +2455,7 @@ std::string llama_model_ftype_name(llama_ftype ftype) {
         case LLAMA_FTYPE_MOSTLY_Q8_0_R8:  return "Q8_0_R8 - 8.5 bpw";
         case LLAMA_FTYPE_MOSTLY_MXFP4:    return "MXFP4 - 4.25 bpw";
         case LLAMA_FTYPE_MOSTLY_Q1_0_G128:return "Q1_0_G128 - 1.125 bpw";
+        case LLAMA_FTYPE_MOSTLY_Q1_0_G128_R8:return "Q1_0_G128_R8";
         case LLAMA_FTYPE_MOSTLY_IQ4_XS:   return "IQ4_XS - 4.25 bpw";
         case LLAMA_FTYPE_MOSTLY_IQ4_KS:   return "IQ4_KS - 4.25 bpw";
         case LLAMA_FTYPE_MOSTLY_IQ4_KS_R4:return "IQ4_KS_R4 - 4.25 bpw";
@@ -2239,6 +2553,7 @@ const char * llama_model_type_name(e_model type) {
         case MODEL_34B:           return "34B";
         case MODEL_35B:           return "35B";
         case MODEL_36B:           return "36B";
+        case MODEL_36B_A4B:       return "36B.A4B";
         case MODEL_40B:           return "40B";
         case MODEL_65B:           return "65B";
         case MODEL_70B:           return "70B";
@@ -2269,10 +2584,12 @@ const char * llama_model_type_name(e_model type) {
         case MODEL_12B_A2_5B:     return "12B.A2.5B";
         case MODEL_16B_A1B:       return "16B.A1B";
         case MODEL_21B_A3B:       return "21B.A3B";
+        case MODEL_24B_A2B:       return "24B.A2B";
         case MODEL_30B_A3B:       return "30B.A3B";
         case MODEL_33B_A3B:       return "33B.A3B";
         case MODEL_35B_A3B:       return "35B.A3B";
         case MODEL_80B_A3B:       return "80B.A3B";
+        case MODEL_125B_A6B:      return "125B.A6B";
         case MODEL_80B_A13B:      return "80B.A13B";
         case MODEL_100B_A6B:      return "100B.A6B";
         case MODEL_106B_A12B:     return "106B.A12B";
@@ -2281,6 +2598,7 @@ const char * llama_model_type_name(e_model type) {
         case MODEL_230B_A10B:     return "230B.A10B";
         case MODEL_235B_A22B:     return "235B.A22B";
         case MODEL_310B_A15B:     return "310B.A15B";
+        case MODEL_312B_A17B:     return "312B.A17B";
         case MODEL_300B_A47B:     return "300B.A47B";
         case MODEL_355B_A32B:     return "355B.A32B";
         case MODEL_397B_A17B:     return "397B.A17B";
@@ -2304,7 +2622,7 @@ bool llama_model_has_recurrent(const llama_model * model) {
 }
 
 bool llama_model_is_deepseek4(const llama_model * model) {
-    return model && model->arch == LLM_ARCH_DEEPSEEK4;
+    return model && llm_arch_is_dsv4(model->arch);
 }
 
 bool llama_model_is_openpangu(const llama_model * model) {
@@ -2319,6 +2637,19 @@ bool llama_model_is_step35(const llama_model * model) {
     return model && model->arch == LLM_ARCH_STEP35;
 }
 
+bool llama_model_is_qwen4exp(const llama_model * model) {
+    return model && model->arch == LLM_ARCH_QWEN4EXP;
+}
+
+// qwen4exp marks a present trunk block with hc_attn_norm, every other arch with attn_norm
+static bool llama_model_trunk_block_present(const llama_layer & layer) {
+    return layer.attn_norm != nullptr || layer.hc_attn_norm != nullptr;
+}
+
+bool llama_model_is_qwen35_family(const llama_model * model) {
+    return model && (model->arch == LLM_ARCH_QWEN35 || model->arch == LLM_ARCH_QWEN35MOE);
+}
+
 enum llama_mtp_package llama_model_mtp_package(const llama_model * model) {
     if (!model) {
         return LLAMA_MTP_PACKAGE_INVALID;
@@ -2331,15 +2662,17 @@ enum llama_mtp_package llama_model_mtp_package(const llama_model * model) {
     const size_t n_nextn = model->hparams.nextn_predict_layers;
     const bool has_common_package_contract =
         llama_model_is_step35(model) || llama_model_is_deepseek4(model) ||
+        llama_model_is_qwen35_family(model) || llama_model_is_qwen4exp(model) ||
         llama_model_is_gemma4_mtp_assistant(model);
     if (!has_common_package_contract) {
         return n_nextn > 0 ? LLAMA_MTP_PACKAGE_EMBEDDED : LLAMA_MTP_PACKAGE_NONE;
     }
 
     if (n_nextn == 0) {
-        if (llama_model_is_step35(model) || llama_model_is_deepseek4(model)) {
+        if (llama_model_is_step35(model) || llama_model_is_deepseek4(model) ||
+            llama_model_is_qwen35_family(model) || llama_model_is_qwen4exp(model)) {
             for (const auto & layer : model->layers) {
-                if (layer.attn_norm != nullptr) {
+                if (llama_model_trunk_block_present(layer)) {
                     return LLAMA_MTP_PACKAGE_TARGET_ONLY;
                 }
             }
@@ -2353,11 +2686,14 @@ enum llama_mtp_package llama_model_mtp_package(const llama_model * model) {
     }
 
     const size_t first = n_layers - n_nextn;
-    const bool has_tail = model->layers[first].nextn.eh_proj != nullptr;
+    // A Qwen3.5 NextN block loads eh_proj, attn_q and the MLP as optional, so none of them
+    // marks a predictor tail on its own; enorm is required and is present in all of them.
+    const bool has_tail = model->layers[first].nextn.eh_proj != nullptr ||
+        (llama_model_is_qwen35_family(model) && model->layers[first].nextn.enorm != nullptr);
 
     bool has_trunk = false;
     for (size_t il = 0; il < first; ++il) {
-        if (model->layers[il].attn_norm != nullptr) {
+        if (llama_model_trunk_block_present(model->layers[il])) {
             has_trunk = true;
             break;
         }
@@ -2422,7 +2758,9 @@ bool llama_model_is_split_mode_graph(const struct llama_model * model) {
 
 bool llama_model_supports_ctx_shift(const struct llama_model * model) {
     // openPangu and DeepSeek4 keep position-dependent private state outside the generic KV cache.
-    return model && model->arch != LLM_ARCH_OPENPANGU && model->arch != LLM_ARCH_DEEPSEEK4;
+    // Gemma3 and Cohere2 vary rope geometry per layer without recording it in hparams.swa_layers.
+    return model && model->arch != LLM_ARCH_OPENPANGU && !llm_arch_is_dsv4(model->arch)
+        && model->arch != LLM_ARCH_GEMMA3 && model->arch != LLM_ARCH_COHERE2;
 }
 
 bool llama_model_supports_partial_kv_reuse(const struct llama_model * model) {
@@ -2465,7 +2803,10 @@ size_t llama_model::cache_size(int il, ggml_type type_k, ggml_type type_v, ggml_
     if (il < 0 || il >= hparams.n_layer) return 0;
     if (hparams.recurrent_layer_arr[il]) {
         auto state_sots = std::min<uint32_t>(std::max<uint32_t>(1, n_seq_max), kv_size);
-        return hparams.n_embd_v_s() * state_sots * sizeof(float);
+        const size_t state_width = hparams.ssm_n_group > 0
+            ? hparams.recurrent_state_layout_for((uint32_t) il).row_width
+            : hparams.n_embd_v_s() + hparams.n_embd_ple_conv((uint32_t) il);
+        return state_width * (size_t) state_sots * sizeof(float);
     }
     if (arch == LLM_ARCH_OPENPANGU) {
         // MLA-latent cache: K row [ckv | roped k_pe]. The value-side latent is
@@ -2496,10 +2837,11 @@ size_t llama_model::cache_size(int il, ggml_type type_k, ggml_type type_v, ggml_
         }
         return size;
     }
-    if (arch == LLM_ARCH_DEEPSEEK4) {
-        constexpr uint32_t csa_ratio = 4;
-        constexpr uint32_t hca_ratio = 128;
+    if (llm_arch_is_dsv4(arch)) {
+        // mirrors llama_context::ensure_dsv4_cache_tensors
         constexpr uint32_t cache_pad = 256;
+        const uint32_t csa_ratio = hparams.dsv4_csa_ratio;
+        const uint32_t hca_ratio = hparams.dsv4_hca_ratio;
 
         const uint32_t n_stream = std::max<uint32_t>(1, n_seq_max);
         const uint32_t csa_kv = GGML_PAD(std::max<uint32_t>(1, (kv_size + csa_ratio - 1)/csa_ratio), cache_pad);
@@ -2511,6 +2853,18 @@ size_t llama_model::cache_size(int il, ggml_type type_k, ggml_type type_v, ggml_
         const uint32_t raw_pad = llama_kv_cache::get_padding(flash_attn);
         const uint32_t k_rows = llama_kv_layer_rows(hparams, il, kv_size, swa_compress, n_ubatch, raw_pad);
         size_t size = ggml_row_size(type_k, n_embd_head) * hparams.n_head_kv(il) * k_rows;
+        if (hparams.dsv4_shared_streams) {
+            // readers alias their source, so only sources and key owners cost anything here
+            const uint32_t n_rows = ratio == csa_ratio ? csa_kv : hca_kv;
+            if (hparams.dsv41_is_kv_source(il)) {
+                size += ggml_row_size(type_k, n_embd_head) * n_rows * n_stream;
+                size += (size_t) n_embd_head * ratio * n_stream * sizeof(float) * 2;
+            }
+            if (hparams.dsv41_owns_index_k(il)) {
+                size += ggml_row_size(idx_type_k, n_indexer_head) * n_rows * n_stream;
+            }
+            return size;
+        }
         if (ratio == csa_ratio) {
             size += ggml_row_size(type_k, n_embd_head) * csa_kv * n_stream;
             size += ggml_row_size(idx_type_k, n_indexer_head) * csa_kv * n_stream;
@@ -2528,5 +2882,16 @@ size_t llama_model::cache_size(int il, ggml_type type_k, ggml_type type_v, ggml_
                                               llama_kv_cache::get_padding(flash_attn));
     auto k_size = ggml_row_size(type_k, hparams.n_embd_head_k(il)) * n_head_kv*rows;
     auto v_size = ggml_row_size(type_v, hparams.n_embd_v_gqa(il)) * rows;
+    // a qwen4exp sparse-attention layer also caches one raw indexer key per cell and one
+    // pooled key per block of `ratio` cells
+    if (arch == LLM_ARCH_QWEN4EXP && hparams.indexer_head_size > 0 && hparams.is_qsa(il)) {
+        const uint32_t ratio = hparams.dsv4_compress_ratios[il];
+        k_size += ggml_row_size(idx_type_k, hparams.indexer_head_size) * (rows + (rows + ratio - 1)/ratio);
+    }
+    // a PLE layer that is not recurrent still gets a state row for its convolution history
+    if (hparams.n_embd_ple_conv(il) > 0) {
+        auto state_sots = std::min<uint32_t>(std::max<uint32_t>(1, n_seq_max), kv_size);
+        k_size += hparams.n_embd_ple_conv(il) * (size_t) state_sots * sizeof(float);
+    }
     return k_size + v_size;
 }

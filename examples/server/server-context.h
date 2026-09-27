@@ -44,7 +44,6 @@ struct server_slot {
     int32_t n_ctx = 0;  // context size per slot
     int32_t n_past = 0;
     int32_t n_past_prompt = 0;
-    int32_t n_past_offset = 0;
     int32_t n_decoded = 0;
     int32_t n_remaining = -1;
     int32_t n_discarded_prompt = 0;
@@ -126,6 +125,7 @@ struct server_slot {
     // sampling
     llama_token sampled; // in speculative mode, this is the last accepted token
     llama_tokens drafted;
+    std::vector<common_speculative_token_dist> draft_proposal_dists;
     bool spec_target_only = false;
 
     json json_schema;
@@ -321,7 +321,7 @@ struct server_context {
 
     void send_error(const server_slot& slot, const std::string& error, const enum error_type type = ERROR_TYPE_SERVER);
 
-    void send_error(const int id_task, const int id_multi, const std::string& error, const enum error_type type = ERROR_TYPE_SERVER);
+    void send_error(const int id_task, const int id_multi, const std::string& error, const enum error_type type = ERROR_TYPE_SERVER, const int32_t n_prompt_tokens = 0, const int32_t n_ctx = 0);
 
     // if multimodal is enabled, send an error and return false
     bool check_no_mtmd(const int id_task);
@@ -389,7 +389,7 @@ struct server_context {
     // Re-aggregates all active vectors and updates the model state
     bool apply_control_vectors_internal();
 
-    bool create_checkpoint(server_slot & slot);
+    bool create_checkpoint(server_slot & slot, bool prompt_end = false);
 
     void apply_checkpoint(server_slot & slot);
 

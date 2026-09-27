@@ -455,7 +455,11 @@ if (GGML_HIPBLAS)
     list(APPEND GGML_SOURCES_ROCM "ggml-cuda.cu")
     file(GLOB   SRCS "ggml-cuda/template-instances/fattn-wmma*.cu")
     list(APPEND GGML_SOURCES_ROCM ${SRCS})
+    file(GLOB   SRCS "ggml-cuda/template-instances/fattn-mma*.cu")
+    list(APPEND GGML_SOURCES_ROCM ${SRCS})
     file(GLOB   SRCS "ggml-cuda/template-instances/mmq*.cu")
+    list(APPEND GGML_SOURCES_ROCM ${SRCS})
+    file(GLOB   SRCS "ggml-cuda/template-instances/mmvq-instance*.cu")
     list(APPEND GGML_SOURCES_ROCM ${SRCS})
 
     if (GGML_CUDA_FA_ALL_QUANTS)
@@ -469,14 +473,29 @@ if (GGML_HIPBLAS)
         list(APPEND GGML_SOURCES_ROCM ${SRCS})
         file(GLOB   SRCS "ggml-cuda/template-instances/fattn-vec*f16-f16.cu")
         list(APPEND GGML_SOURCES_ROCM ${SRCS})
+        file(GLOB   SRCS "ggml-cuda/template-instances/fattn-vec*q8_0-iq4_nl.cu")
+        list(APPEND GGML_SOURCES_ROCM ${SRCS})
+        file(GLOB   SRCS "ggml-cuda/template-instances/fattn-vec*iq4_nl-iq4_nl.cu")
+        list(APPEND GGML_SOURCES_ROCM ${SRCS})
+        file(GLOB   SRCS "ggml-cuda/template-instances/fattn-vec*q6_0-q5_0.cu")
+        list(APPEND GGML_SOURCES_ROCM ${SRCS})
+        file(GLOB   SRCS "ggml-cuda/template-instances/fattn-vec*q8_0-q6_0.cu")
+        list(APPEND GGML_SOURCES_ROCM ${SRCS})
     endif()
 
     list(APPEND GGML_CDEF_PUBLIC GGML_USE_CUDA)
 
     add_compile_definitions(GGML_USE_HIPBLAS)
+    # the sources imported from upstream test for GGML_USE_HIP, this fork only had the older
+    # GGML_USE_HIPBLAS spelling. Without it mmq_id_common.cuh defines TURING_MMA_AVAILABLE,
+    # AMPERE_MMA_AVAILABLE, CP_ASYNC_AVAILABLE and FP16_MMA_AVAILABLE, i.e. the inline PTX paths
+    add_compile_definitions(GGML_USE_HIP)
     add_compile_definitions(GGML_CUDA_DMMV_X=${GGML_CUDA_DMMV_X})
     add_compile_definitions(GGML_CUDA_MMV_Y=${GGML_CUDA_MMV_Y})
     add_compile_definitions(K_QUANTS_PER_ITERATION=${GGML_CUDA_KQUANTS_ITER})
+    add_compile_definitions(GGML_CUDA_PEER_MAX_BATCH_SIZE=${GGML_CUDA_PEER_MAX_BATCH_SIZE})
+    add_compile_definitions(GGML_CUDA_MIN_BATCH_OFFLOAD=${GGML_CUDA_MIN_BATCH_OFFLOAD})
+    add_compile_definitions(GGML_CUDA_FUSION=${GGML_CUDA_FUSION})
 
     if (GGML_HIP_UMA)
         add_compile_definitions(GGML_HIP_UMA)
@@ -492,6 +511,18 @@ if (GGML_HIPBLAS)
 
     if (GGML_CUDA_FORCE_CUBLAS)
         add_compile_definitions(GGML_CUDA_FORCE_CUBLAS)
+    endif()
+
+    if (GGML_CUDA_IQK_FORCE_BF16)
+        add_compile_definitions(GGML_CUDA_IQK_FORCE_BF16)
+    endif()
+
+    if (DEFINED GGML_CUDA_DMMV_Y)
+        add_compile_definitions(GGML_CUDA_MMV_Y=${GGML_CUDA_DMMV_Y}) # for backwards compatibility
+    endif()
+
+    if (GGML_CUDA_F16 OR GGML_CUDA_DMMV_F16)
+        add_compile_definitions(GGML_CUDA_F16)
     endif()
 
     if (GGML_CUDA_NO_PEER_COPY)
@@ -1141,6 +1172,16 @@ elseif (CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64" OR CMAKE_GENERATOR_PLATFORM_LW
                 add_compile_definitions($<$<COMPILE_LANGUAGE:C>:__AVX512BF16__>)
                 add_compile_definitions($<$<COMPILE_LANGUAGE:CXX>:__AVX512BF16__>)
             endif()
+
+            # With GGML_NATIVE the extensions are probed, so reaching here means the
+            # CPU has no AVX512-VNNI (Skylake-X, Cascade Lake). Leaving
+            # HAVE_FANCY_SIMD off is correct there.
+            if (GGML_NATIVE AND NOT GGML_AVX512_VNNI)
+                message(STATUS
+                    "AVX-512 without VNNI detected. __AVX512VNNI__ stays undefined, "
+                    "HAVE_FANCY_SIMD is off, and the IQK GEMM kernels for Zen4 / Sapphire "
+                    "Rapids and later are not compiled, which is expected on this CPU.")
+            endif()
         elseif (GGML_AVX2)
             list(APPEND ARCH_FLAGS /arch:AVX2)
             if (GGML_AVXVNNI)
@@ -1308,6 +1349,8 @@ add_library(ggml
             ggml-quants.h
             ggml-utils.h
             ggml-impl.h
+            ggml-rpc-transport.h
+            ggml-rpc-transport.cpp
             ${GGML_SOURCES_CUDA}      ${GGML_HEADERS_CUDA}
             ${GGML_SOURCES_METAL}     ${GGML_HEADERS_METAL}
             ${GGML_SOURCES_RPC}       ${GGML_HEADERS_RPC}

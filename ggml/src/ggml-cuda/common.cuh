@@ -57,7 +57,9 @@
 #define CC_RDNA1      (CC_OFFSET_AMD + 1010)
 #define CC_RDNA2      (CC_OFFSET_AMD + 1030)
 #define CC_RDNA3      (CC_OFFSET_AMD + 1100)
-#define GGML_CUDA_CC_IS_NVIDIA(cc)   (cc < CC_OFFSET_MTHREADS)
+// CC_OFFSET_AMD is below CC_OFFSET_MTHREADS, so the AMD range has to be excluded explicitly.
+// An NVIDIA cc is 100*major + 10*minor and never comes anywhere near either offset
+#define GGML_CUDA_CC_IS_NVIDIA(cc)   (cc < CC_OFFSET_AMD)
 #define GGML_CUDA_CC_IS_AMD(cc)   (cc >= CC_OFFSET_AMD)
 
 #define MATRIX_ROW_PADDING 512 // last row of quant. matrices is a multiple of this to avoid out-of-bounds memory accesses
@@ -247,6 +249,12 @@ static __device__ void no_device_code(
 #define NO_DEVICE_CODE //GGML_ABORT("NO_DEVICE_CODE not valid in host code.")
 #endif // __CUDA_ARCH__
 
+static __device__ __forceinline__ void ggml_cuda_syncwarp() {
+#ifndef GGML_USE_HIP
+    __syncwarp();
+#endif // GGML_USE_HIP
+}
+
 static __device__ __forceinline__ float warp_reduce_sum(float x) {
 #pragma unroll
     for (int mask = 16; mask > 0; mask >>= 1) {
@@ -392,6 +400,32 @@ static __device__ __forceinline__ int ggml_cuda_dp4a(const int a, const int b, i
 
 #endif // defined(GGML_USE_HIPBLAS) && defined(__HIP_PLATFORM_AMD__)
 }
+
+#if defined(GGML_USE_HIPBLAS) && defined(__HIP_PLATFORM_AMD__)
+// look up the 8 nibbles of q4 in a 16 entry table. HIP emulates __byte_perm() with an 8 byte union
+// and four dynamically indexed byte loads, which end up in scratch, so the __byte_perm() version in
+// get_int_from_table_16() is an order of magnitude slower here. v_perm_b32 does the same in one
+// instruction, but takes one selector byte per output byte where prmt takes one nibble
+static __device__ __forceinline__ int2 ggml_cuda_perm_table_16(const int & q4, const int8_t * values) {
+    const uint32_t * values32 = (const uint32_t *)values;
+
+    const uint32_t q_even = q4;
+    const uint32_t q_odd  = q4 >> 4;
+
+    // indices 0-7 come from the lower half of the table, 8-15 from the upper half
+    const uint32_t v_even_low  = __builtin_amdgcn_perm(values32[1], values32[0], q_even & 0x07070707);
+    const uint32_t v_odd_low   = __builtin_amdgcn_perm(values32[1], values32[0], q_odd  & 0x07070707);
+    const uint32_t v_even_high = __builtin_amdgcn_perm(values32[3], values32[2], q_even & 0x07070707);
+    const uint32_t v_odd_high  = __builtin_amdgcn_perm(values32[3], values32[2], q_odd  & 0x07070707);
+
+    // bit 3 of each index picks the half, i.e. byte 0-3 or byte 4-7 of the pair above
+    const uint32_t mask_even = 0x03020100 | ((q_even & 0x08080808) >> 1);
+    const uint32_t mask_odd  = 0x03020100 | ((q_odd  & 0x08080808) >> 1);
+
+    return make_int2(__builtin_amdgcn_perm(v_even_high, v_even_low, mask_even),
+                     __builtin_amdgcn_perm(v_odd_high,  v_odd_low,  mask_odd));
+}
+#endif // defined(GGML_USE_HIPBLAS) && defined(__HIP_PLATFORM_AMD__)
 
 // TODO: move to ggml-common.h
 static constexpr __device__ int8_t kvalues_iq4nl[16] = {-127, -104, -83, -65, -49, -35, -22, -10, 1, 13, 25, 38, 53, 69, 89, 113};
@@ -856,6 +890,7 @@ struct ggml_backend_cuda_context {
     int   offload_batch_size_per_byte = -1;
     int   mmq_id_thresh = 32;
     float fa_offset = 0.6931f; // ln(2)
+    bool  fabsum = false;      // opt-in: bound the fp16 accumulation error in the tile FA kernel
 #ifdef USE_CUDA_GRAPH
     bool use_cuda_graph = true;
 

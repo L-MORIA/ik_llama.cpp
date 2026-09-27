@@ -60,8 +60,8 @@ static ggml_backend_t llama_backend_for_tensor(const llama_context & lctx, const
 bool llama_context::ensure_dflash_kv_cache_tensors(int32_t cross_ctx) {
     const int32_t target_cross_ctx = std::max<int32_t>(1, cross_ctx);
     const int32_t target_token_capacity = std::max<int32_t>(
-            1,
-            std::max<int32_t>((int32_t) model.hparams.dflash_block_size, (int32_t) cparams.n_ubatch));
+            std::max<int32_t>(1, (int32_t) model.hparams.dflash_block_size),
+            cparams.dflash_query_capacity);
     const int32_t target_cache_n_kv_total = GGML_PAD(target_cross_ctx + target_token_capacity, (int32_t) llama_kv_cache::get_padding(cparams.flash_attn));
     const ggml_type target_cache_type = cparams.flash_attn ? GGML_TYPE_F16 : GGML_TYPE_F32;
     const int32_t n_layer = model.hparams.n_layer;
@@ -154,6 +154,25 @@ bool llama_context::ensure_dflash_kv_cache_tensors(int32_t cross_ctx) {
     }
 
     llama_reset_dflash_kv_cache_state(this);
+
+    size_t k_bytes = 0;
+    size_t v_bytes = 0;
+    for (size_t i = 0; i < dflash.kv.cache_bufs.size(); ++i) {
+        if (dflash.kv.cache_bufs[i] == nullptr) {
+            continue;
+        }
+        if ((i & 1) == 0) {
+            k_bytes += ggml_backend_buffer_get_size(dflash.kv.cache_bufs[i]);
+        } else {
+            v_bytes += ggml_backend_buffer_get_size(dflash.kv.cache_bufs[i]);
+        }
+    }
+    LLAMA_LOG_INFO("%s: DFlash custom K/V cache bytes = %.2f MiB (K %.2f MiB, V %.2f MiB, cross_ctx %d, query_capacity %d, tail_capacity %d)\n",
+            __func__,
+            (double) (k_bytes + v_bytes) / (1024.0 * 1024.0),
+            (double) k_bytes / (1024.0 * 1024.0),
+            (double) v_bytes / (1024.0 * 1024.0),
+            target_cross_ctx, cparams.dflash_query_capacity, target_token_capacity);
 
     return true;
 }
@@ -380,7 +399,6 @@ bool llama_prepare_dflash_graph_inputs(
     const int32_t cross_ctx = lctx.dflash.visible_cross_ctx > 0
             ? lctx.dflash.visible_cross_ctx
             : std::max<int32_t>(1, (int32_t) lctx.cparams.n_ctx - (int32_t) lctx.model.hparams.dflash_block_size);
-    const bool is_dsv4 = lctx.model.hparams.dflash_dsv4;
     ggml_tensor * kq_mask = lctx.dflash.kv.kq_mask_tensor;
     ggml_tensor * kq_mask_swa = lctx.dflash.kv.kq_mask_swa_tensor;
 
@@ -674,6 +692,7 @@ bool llama_prepare_dflash_graph_inputs(
         // keep in sync with the draft batch geometry: block starts one past
         // the newest committed feature row
         const int32_t draft_pos_base = (int32_t) last_target_pos + 1;
+        const bool bidir = lctx.model.hparams.dflash_block_bidir;
 
         if (kq_mask_swa->type == GGML_TYPE_F16) {
             const ggml_fp16_t h_inf = ggml_fp32_to_fp16(-INFINITY);
@@ -682,21 +701,26 @@ bool llama_prepare_dflash_graph_inputs(
             for (uint32_t j = 0; j < n_tokens; ++j) {
                 ggml_fp16_t * row = mask_swa_f16.data() + (size_t) j * (size_t) n_kv_total;
                 const int32_t q_pos = draft_pos_base + (int32_t) j;
+                // bidir blocks see one window anchored at the newest committed position; causal
+                // drafts slide it with the query row
+                const int32_t win_ref_pos = bidir ? draft_pos_base - 1 : q_pos;
 
                 for (int32_t k = 0; k < cross_ctx; ++k) {
                     if (!lctx.dflash.kv.cache_slot_valid[(size_t) k]) {
                         continue;
                     }
                     const int32_t k_pos = (int32_t) lctx.dflash.target.pos_ctx_data[(size_t) k];
-                    if (q_pos - k_pos < swa_window) {
+                    if (win_ref_pos - k_pos < swa_window) {
                         row[k] = h_zero;
                     }
                 }
 
                 for (int32_t k = cross_ctx; k < cross_ctx + (int32_t) n_tokens; ++k) {
                     const int32_t block_k = k - cross_ctx;
-                    // DSV4 Dspark rows see the complete current block, standard DFlash is causal.
-                    if ((is_dsv4 || block_k <= (int32_t) j) && ((int32_t) j - block_k) < swa_window) {
+                    // Follow the draft model's attention contract. DFlash2 proposal blocks are
+                    // non-causal unless the model metadata explicitly requests causal attention.
+                    if ((!lctx.cparams.causal_attn || block_k <= (int32_t) j || bidir) &&
+                            ((int32_t) j - block_k) < swa_window) {
                         row[k] = h_zero;
                     }
                 }
@@ -707,23 +731,26 @@ bool llama_prepare_dflash_graph_inputs(
             for (uint32_t j = 0; j < n_tokens; ++j) {
                 float * row = lctx.dflash.target.kq_mask_swa_data.data() + (size_t) j * (size_t) n_kv_total;
                 const int32_t q_pos = draft_pos_base + (int32_t) j;
+                // one window at the newest committed position for bidir, per-row sliding otherwise
+                const int32_t win_ref_pos = bidir ? draft_pos_base - 1 : q_pos;
 
                 for (int32_t k = 0; k < cross_ctx; ++k) {
                     if (!lctx.dflash.kv.cache_slot_valid[(size_t) k]) {
                         continue;
                     }
                     const int32_t k_pos = (int32_t) lctx.dflash.target.pos_ctx_data[(size_t) k];
-                    if (q_pos - k_pos < swa_window) {
+                    if (win_ref_pos - k_pos < swa_window) {
                         row[k] = 0.0f;
                     }
                 }
 
                 for (int32_t k = cross_ctx; k < cross_ctx + (int32_t) n_tokens; ++k) {
                     const int32_t block_k = k - cross_ctx;
-                    // intra-block draft tokens are contiguous from draft_pos_base, so the
-                    // SWA distance is (j - block_k); apply the same window bound as the
-                    // cross-context section above (causal AND within n_swa).
-                    if ((is_dsv4 || block_k <= (int32_t) j) && ((int32_t) j - block_k) < swa_window) {
+                    // Intra-block draft tokens are contiguous from draft_pos_base, so the
+                    // SWA distance is (j - block_k); apply the model's causal setting and
+                    // the same window bound as the cross-context section above.
+                    if ((!lctx.cparams.causal_attn || block_k <= (int32_t) j || bidir) &&
+                            ((int32_t) j - block_k) < swa_window) {
                         row[k] = 0.0f;
                     }
                 }

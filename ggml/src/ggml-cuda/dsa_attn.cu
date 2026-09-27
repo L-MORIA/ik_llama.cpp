@@ -296,7 +296,9 @@ bool ggml_cuda_dsa_attn_ext(ggml_backend_cuda_context & ctx, ggml_tensor * dst) 
     ggml_cuda_pool_alloc<half> v16(ctx.pool());
     size_t v_offset = 0;
     if (is_k_view) {
-        v_offset = (const half *)V->data - (const half *)K->data;
+        // Using /sizeof(half) is only correct for f16 K/V, for a quantized cache(i.e. q8_0) it yields the wrong column
+        const size_t v_byte_off = (const char *)V->data - (const char *)K->data;
+        v_offset = v_byte_off / ggml_type_size(K->type) * ggml_blck_size(K->type);
     } else {
         v16.alloc(v_cache_size);
     }
@@ -344,6 +346,7 @@ bool ggml_cuda_dsa_attn_ext(ggml_backend_cuda_context & ctx, ggml_tensor * dst) 
                     (const float *)((const char *)Q->data + first*Q->nb[1]), q16.get());
         }
 
+        CUBLAS_CHECK(cublasSetStream(ctx.cublas_handle(), ctx.stream()));
         CUBLAS_CHECK(cublasHgemmStridedBatched(ctx.cublas_handle(), CUBLAS_OP_T, CUBLAS_OP_N,
                     indexer->ne[0], Q->ne[2], Q->ne[0],
                     &alpha, k16.get(), K->ne[0], K->ne[0]*indexer->ne[0],
@@ -362,14 +365,14 @@ bool ggml_cuda_dsa_attn_ext(ggml_backend_cuda_context & ctx, ggml_tensor * dst) 
                         &alpha_32, k16.get() + v_offset, CUDA_R_16F, K->ne[0], K->ne[0]*indexer->ne[0],
                         kq16.get(),                      CUDA_R_16F, indexer->ne[0], indexer->ne[0]*Q->ne[2],
                         &beta_32, kqv32.get(),           CUDA_R_32F, V->ne[0], V->ne[0]*Q->ne[2], nrows,
-                        CUDA_R_32F, CUBLAS_GEMM_DEFAULT_TENSOR_OP));
+                        CUBLAS_COMPUTE_32F, CUBLAS_GEMM_DEFAULT_TENSOR_OP));
         } else {
             CUBLAS_CHECK(cublasGemmStridedBatchedEx(ctx.cublas_handle(), CUBLAS_OP_N, CUBLAS_OP_N,
                         V->ne[0], Q->ne[2], indexer->ne[0],
                         &alpha_32, v16.get(),  CUDA_R_16F, V->ne[0], V->ne[0]*indexer->ne[0],
                         kq16.get(),            CUDA_R_16F, indexer->ne[0], indexer->ne[0]*Q->ne[2],
                         &beta_32, kqv32.get(), CUDA_R_32F, V->ne[0], V->ne[0]*Q->ne[2], nrows,
-                        CUDA_R_32F, CUBLAS_GEMM_DEFAULT_TENSOR_OP));
+                        CUBLAS_COMPUTE_32F, CUBLAS_GEMM_DEFAULT_TENSOR_OP));
         }
 
         {

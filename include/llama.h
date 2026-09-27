@@ -214,7 +214,9 @@ extern "C" {
         LLAMA_FTYPE_MOSTLY_IQ3_KS        = 154, // except 1d tensors
         LLAMA_FTYPE_MOSTLY_IQ2_KL        = 155, // except 1d tensors
         LLAMA_FTYPE_MOSTLY_IQ1_KT        = 156, // except 1d tensors
-                                                //
+
+        LLAMA_FTYPE_MOSTLY_Q1_0_G128_R8  = 160, // except 1d tensors, 38 to be compatible with mainline
+
         LLAMA_FTYPE_MOSTLY_Q4_0_R8       = 202, // except 1d tensors
         LLAMA_FTYPE_MOSTLY_Q8_0_R8       = 207, // except 1d tensors
         LLAMA_FTYPE_MOSTLY_Q5_0_R4       = 208, // except 1d tensors
@@ -240,6 +242,7 @@ extern "C" {
         LLAMA_FTYPE_MOSTLY_IQ4_K_R4      = 340, // except 1d tensors
         LLAMA_FTYPE_MOSTLY_IQ5_K_R4      = 341, // except 1d tensors
         LLAMA_FTYPE_MOSTLY_IQ4_KS_R4     = 345, // except 1d tensors
+        LLAMA_FTYPE_MOSTLY_IQ4_KS_R16    = 346, // except 1d tensors
         LLAMA_FTYPE_MOSTLY_IQ5_KS_R4     = 350, // except 1d tensors
         LLAMA_FTYPE_MOSTLY_MXFP4_R8      = 351, // except 1d tensors
         LLAMA_FTYPE_MOSTLY_Q8_KV_R8      = 398, // except 1d tensors
@@ -433,6 +436,7 @@ extern "C" {
         bool dry_run;       // skip loading tensors
         bool flash_attn;
         bool defer_experts;    // defer expert mmap residency to speed up model loading (Linux only)
+        bool defer_ple;        // keep the per-layer token embedding on the file instead of resident in memory (Linux only)
         bool swa_compress;     // must match llama_context_params::swa_compress; the fit also assumes that context's n_ubatch
     };
 
@@ -494,8 +498,9 @@ extern "C" {
         bool rope_cache;        // whether to use RoPE cache [EXPERIMENTAL]
         bool graph_reuse;       // whether to reuse graphs when possible [EXPERIMENTAL]
         bool dsa;               // enable GLM DSA sparse attention (off by default) [EXPERIMENTAL]
-        bool fused_idx_topk;    // enable the fused indexer topk op (off by default) [EXPERIMENTAL]
+        bool fused_idx_topk;    // enable the fused indexer topk op (on by default) [EXPERIMENTAL]
         bool swa_compress;      // allocate sliding-window layers at window size instead of n_ctx (off by default) [EXPERIMENTAL]
+        bool dsv4_legacy_state; // write DeepSeek-V4 state in the legacy full-slice layout (no MAGIC), byte-identical to main [EXPERIMENTAL]
         int  dsa_top_k;         // DSA top-k override (<0 => model's configured indexer_top_k) [EXPERIMENTAL]
         int  min_experts;
         float thresh_experts;
@@ -517,6 +522,7 @@ extern "C" {
         void *              abort_callback_data;
         void *              offload_policy;
         void *              cuda_params;
+        int32_t             dflash_query_capacity; // internal DFlash query capacity override
     };
 
     // model quantization parameters
@@ -546,6 +552,7 @@ extern "C" {
         bool only_repack;                    // Only repack tensors
         bool dry_run;                        //
         bool partial_requant;                // quantize only missing split files in the split quantized .gguf destination directory
+        size_t slab_size;                    // tensors larger than this many bytes of f32 are processed in slabs of up to this size (at least one slice or row group), 0 = never
         void * imatrix;                      // pointer to importance matrix data
         void * kv_overrides;                 // pointer to vector containing overrides
         void * custom_quants;                // pointer to vector containing custom quantization rules
@@ -708,10 +715,20 @@ extern "C" {
     // Returns true if the model is openPangu (conv-only recurrent state that rides the spec-rollback checkpoint)
     LLAMA_API bool llama_model_is_openpangu(const struct llama_model * model);
 
+    LLAMA_API bool llama_kv_cache_is_compacted(const struct llama_context * ctx);
+
+    LLAMA_API llama_pos llama_kv_cache_swa_rewind_floor(const struct llama_context * ctx);
+
+    LLAMA_API llama_pos llama_kv_cache_n_swa(const struct llama_context * ctx);
+
     // Returns true if the model is a Gemma 4 MTP assistant (external frozen-KV speculative drafter)
     LLAMA_API bool llama_model_is_gemma4_mtp_assistant(const struct llama_model * model);
 
     LLAMA_API bool llama_model_is_step35(const struct llama_model * model);
+
+    LLAMA_API bool llama_model_is_qwen35_family(const struct llama_model * model);
+
+    LLAMA_API bool llama_model_is_qwen4exp(const struct llama_model * model);
 
     LLAMA_API bool llama_is_gemma4_mtp_file(const char * path);
 
@@ -1142,6 +1159,15 @@ extern "C" {
     // Returns LLAMA_TOKEN_NULL if argmax is not available (falls back to logits path).
     LLAMA_API llama_token llama_get_dflash_draft_token_ith(struct llama_context * ctx, int32_t i);
 
+    // Copy DFlash2 selector lattice after a draft decode with top_k*top_k scores
+    // and top_k candidate IDs per position.
+    LLAMA_API int32_t llama_get_dflash_draft_lattice_top_k(struct llama_context * ctx);
+    LLAMA_API int32_t llama_get_dflash_draft_lattice_n_positions(struct llama_context * ctx);
+    LLAMA_API bool llama_copy_dflash_draft_lattice(
+            struct llama_context * ctx,
+            float * scores, size_t score_count,
+            int32_t * ids, size_t id_count);
+
     // Get all output token embeddings.
     // when pooling_type == LLAMA_POOLING_TYPE_NONE or when using a generative model,
     // the embeddings for which llama_batch.logits[i] != 0 are stored contiguously
@@ -1518,7 +1544,7 @@ LLAMA_API struct llama_grammar* llama_sampler_init_grammar_lazy_patterns(
     /// @details Adaptive p sampler initializer
     /// @param target Select tokens near this probability (valid range 0.0 to 1.0; <0 = disabled)
     /// @param decay Decay rate for target adaptation over time. lower values -> faster but less stable adaptation. (valid range 0.0 to 1.0; ≤0 = no adaptation)
-    LLAMA_API struct llama_sampler_adaptive_p * llama_init_adaptive_p(int n_vocab,
+    LLAMA_API struct llama_sampler_adaptive_p * llama_init_adaptive_p(
            const float target,
            const float decay,
             const bool updt_w_cur,
@@ -1572,12 +1598,6 @@ LLAMA_API struct llama_grammar* llama_sampler_init_grammar_lazy_patterns(
     LLAMA_API llama_token llama_sample_token(
             struct llama_context * ctx,
           llama_token_data_array * candidates);
-
-    /// @details Randomly selects a token from the candidates following adaptive p sampler.
-    llama_token llama_sample_token_adaptive_p(
-            struct llama_context * ctx,
-          llama_token_data_array * candidates,
- struct llama_sampler_adaptive_p * adapt_p_ctx);
 
     //
     // Model split
@@ -1656,6 +1676,9 @@ const std::vector<std::pair<std::string, struct ggml_tensor *>> & llama_internal
 // Randomly selects a token from the candidates based on their probabilities using given std::mt19937.
 // This is a temporary workaround in order to fix race conditions when sampling with multiple sequences.
 llama_token llama_sample_token_with_rng(struct llama_context * ctx, llama_token_data_array * candidates, std::mt19937 & rng);
+
+// Randomly selects a token from the candidates following adaptive p sampler.
+llama_token llama_sample_token_adaptive_p(struct llama_context * ctx, llama_token_data_array * candidates, struct llama_sampler_adaptive_p * adapt_p_ctx, std::mt19937 & rng);
 
 #endif // LLAMA_API_INTERNAL
 

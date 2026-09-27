@@ -159,7 +159,8 @@ struct llm_build_context {
 
     ggml_tensor * build_inp_KQ_mask_swa_win(int64_t n_kv_win, bool causal = true);
 
-    ggml_tensor * build_swa_mask_for_graph(uint32_t window, bool compacted, bool * windowed = nullptr);
+    ggml_tensor * build_swa_mask_for_graph(uint32_t window, bool compacted, bool * windowed = nullptr,
+            const llama_kv_cache * kv = nullptr);
 
     ggml_tensor * build_inp_mean();
 
@@ -247,6 +248,9 @@ struct llm_build_context {
     ggml_cgraph * build_qwen3vlmoe();
 
     ggml_cgraph * build_qwen3next();
+    ggml_cgraph * build_qwen4exp();
+
+    ggml_cgraph * build_lfm2();
 
     ggml_cgraph * build_qwen35moe();
 
@@ -300,6 +304,7 @@ struct llm_build_context {
 
     ggml_cgraph * build_deepseek2();
     ggml_cgraph * build_deepseek4();
+    ggml_cgraph * build_deepseek41();
     ggml_cgraph * build_openpangu();
 
     // openPangu attention sublayer body (shared by base layers and the NextN/MTP head):
@@ -430,6 +435,7 @@ struct llm_build_context {
 
     ggml_cgraph * build_bailingmoe2();
     ggml_cgraph * build_bailingmoe3();
+    ggml_cgraph * build_glm5next();
 
     ggml_cgraph * build_minimaxm2();
     ggml_cgraph * build_minimaxm3();
@@ -443,6 +449,8 @@ struct llm_build_context {
     ggml_cgraph * build_laguna();
 
     ggml_cgraph * build_step35();
+    
+    ggml_cgraph * build_k2horizon();
 
     ggml_tensor * build_step35_mtp(
             const llama_layer & mtp_layer,
@@ -613,7 +621,7 @@ llm_expert_gating_func_type   gating_op,
             ggml_tensor * KQ_mask, ggml_tensor * sinks, ggml_tensor * inp_attn_scale, float KQ_scale, float f_attn_scale,
             int n_swa, int il, bool do_rope = true, bool add_graph_split = false, bool add_input = false, bool is_norm = false,
             bool is_multi = false, ggml_tensor * post_norm = nullptr, int kv_il = -1, float post_norm_eps = 0.0f,
-            post_norm_data * pnd = nullptr);
+            post_norm_data * pnd = nullptr, ggml_tensor ** k_view = nullptr, ggml_tensor ** v_view = nullptr);
 
     static ggml_tensor * build_output(llama_context & lctx, ggml_context * ctx, ggml_tensor * cur, ggml_tensor * output, const llm_build_cb & cb);
 

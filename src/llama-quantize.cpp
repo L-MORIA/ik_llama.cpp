@@ -11,6 +11,7 @@
 #include <thread>
 #include <regex>
 #include <mutex>
+#include <numeric>
 #include <fstream>
 #include <filesystem>
 
@@ -108,6 +109,7 @@ std::pair<ggml_type, int> interleaved_properties(ggml_type type) {
         { GGML_TYPE_IQ3_K_R4,    { GGML_TYPE_IQ3_K, 4} },
         { GGML_TYPE_IQ4_K_R4,    { GGML_TYPE_IQ4_K, 4} },
         { GGML_TYPE_IQ4_KS_R4,   { GGML_TYPE_IQ4_KS, 4} },
+        { GGML_TYPE_IQ4_KS_R16,  { GGML_TYPE_IQ4_KS, 16} },
         { GGML_TYPE_IQ5_KS_R4,   { GGML_TYPE_IQ5_KS, 4} },
         { GGML_TYPE_IQ5_K_R4,    { GGML_TYPE_IQ5_K, 4} },
         { GGML_TYPE_MXFP4_R8,    { GGML_TYPE_MXFP4, 8} },
@@ -237,8 +239,9 @@ static ggml_type change_type_if_necessary(ggml_type new_type, int nx, int ny) {
         new_type == GGML_TYPE_IQ2_KT  || new_type == GGML_TYPE_IQ3_KT  || new_type == GGML_TYPE_IQ4_KT ||
         new_type == GGML_TYPE_IQ5_KS || new_type == GGML_TYPE_IQ5_KS_R4|| new_type == GGML_TYPE_IQ2_KL ||
         new_type == GGML_TYPE_IQ1_KT) {
-        if (nx % QK_K != 0) {
-            LLAMA_LOG_WARN("\n\n%s : tensor cols %d x %d are not divisible by %d, required for %s", __func__, nx, ny, QK_K, ggml_type_name(new_type));
+        const int blck = ggml_row_blck_size(new_type);
+        if (nx % blck != 0) {
+            LLAMA_LOG_WARN("\n\n%s : tensor cols %d x %d are not divisible by %d, required for %s", __func__, nx, ny, blck, ggml_type_name(new_type));
             convert_incompatible_tensor = true;
         }
     }
@@ -258,28 +261,30 @@ static ggml_type change_type_if_necessary(ggml_type new_type, int nx, int ny) {
             case GGML_TYPE_IQ2_S_R4:
             case GGML_TYPE_IQ3_XXS:
             case GGML_TYPE_IQ3_XXS_R4:
-            case GGML_TYPE_IQ3_S:
-            case GGML_TYPE_IQ3_S_R4:
             case GGML_TYPE_IQ1_S:
             case GGML_TYPE_IQ1_M:
             case GGML_TYPE_Q2_K:
             case GGML_TYPE_Q2_K_R4:
-            case GGML_TYPE_Q3_K:
-            case GGML_TYPE_Q3_K_R4:
             case GGML_TYPE_IQ2_K:
             case GGML_TYPE_IQ2_K_R4:
             case GGML_TYPE_IQ2_KL:
+            case GGML_TYPE_IQ1_KT:
+            case GGML_TYPE_IQ2_KT: new_type = GGML_TYPE_IQ3_KT; break;
+            case GGML_TYPE_IQ3_S:
+            case GGML_TYPE_IQ3_S_R4:
+            case GGML_TYPE_Q3_K:
+            case GGML_TYPE_Q3_K_R4:
             case GGML_TYPE_IQ3_KS:
             case GGML_TYPE_IQ3_K:
-            case GGML_TYPE_IQ3_K_R4:
+            case GGML_TYPE_IQ3_K_R4: new_type = GGML_TYPE_IQ4_KT; break;
             case GGML_TYPE_IQ4_KSS:
             case GGML_TYPE_IQ4_KS:
             case GGML_TYPE_IQ4_KS_R4:
             case GGML_TYPE_IQ4_XS_R8:
-            case GGML_TYPE_IQ1_KT:
-            case GGML_TYPE_IQ2_KT:
             case GGML_TYPE_IQ3_KT:
             case GGML_TYPE_IQ4_KT:
+            // Disable GGML_TYPE_IQ4_KS_R16 until we have CUDA implementation for it
+            //case GGML_TYPE_IQ4_XS: new_type = ny % 16 == 0 ? GGML_TYPE_IQ4_KS_R16 : GGML_TYPE_IQ4_NL; break;
             case GGML_TYPE_IQ4_XS: new_type = GGML_TYPE_IQ4_NL; break;
             case GGML_TYPE_IQ4_K:
             case GGML_TYPE_IQ4_K_R4:
@@ -296,6 +301,9 @@ static ggml_type change_type_if_necessary(ggml_type new_type, int nx, int ny) {
             case GGML_TYPE_Q8_K_R8:
             case GGML_TYPE_Q6_K:   new_type = GGML_TYPE_Q8_0;   break;
             default: throw std::runtime_error("\nUnsupported tensor size encountered\n");
+        }
+        if (nx % ggml_row_blck_size(new_type) != 0) {
+            new_type = GGML_TYPE_F16;
         }
         LLAMA_LOG_WARN(" - using fallback quantization %s\n", ggml_type_name(new_type));
     }
@@ -641,7 +649,8 @@ static ggml_type llama_tensor_get_type(quantize_state_internal & qs, ggml_type n
                 new_type = GGML_TYPE_IQ6_K;
         }
         else if (qs.model.hparams.n_gqa() >= 4 &&
-                 !(arch == LLM_ARCH_DFLASH_DRAFT &&
+                 !((arch == LLM_ARCH_DFLASH_DRAFT ||
+                    (arch == LLM_ARCH_DFLASH && !qs.model.hparams.dflash_dsv4)) &&
                    (ftype == LLAMA_FTYPE_MOSTLY_Q4_K_M || ftype == LLAMA_FTYPE_MOSTLY_Q5_K_M))) {
             if      (new_type == GGML_TYPE_Q2_K || new_type == GGML_TYPE_IQ3_XXS) new_type = GGML_TYPE_IQ3_S;
             else if (new_type == GGML_TYPE_Q2_K_R4 || new_type == GGML_TYPE_IQ3_XXS_R4) new_type = GGML_TYPE_IQ3_K_R4;
@@ -1025,6 +1034,52 @@ static void do_quantize(int nthread, const ggml_tensor * tensor, ggml_type new_t
     }
 }
 
+static void do_quantize_slabbed(int nthread, const ggml_tensor * tensor, ggml_type new_type,
+        std::vector<no_init<float>> & f32_buf, char * new_data, const float * imatrix,
+        std::vector<std::thread> & workers, size_t & new_size, int chunk_size_multiplier,
+        const llama_model_quantize_params * params) {
+    const int64_t n_per_row = tensor->ne[0];
+    const int64_t max_slab_elements = params->slab_size / sizeof(float);
+    const int64_t nslices = tensor->ne[2]*tensor->ne[3];
+    ggml_tensor slab = *tensor;
+    new_size = 0;
+    if (nslices > 1) {
+        // whole slices: do_quantize indexes the imatrix per slice
+        const int64_t slice_elements  = n_per_row*tensor->ne[1];
+        const size_t  slice_out_bytes = ggml_row_size(new_type, n_per_row)*tensor->ne[1];
+        const int64_t slices_per_slab = std::max<int64_t>(1, max_slab_elements/slice_elements);
+        for (int64_t first = 0; first < nslices; first += slices_per_slab) {
+            const int64_t n = std::min(slices_per_slab, nslices - first);
+            slab.ne[2] = n;
+            slab.ne[3] = 1;
+            slab.data  = (char *)tensor->data + first*tensor->nb[2];
+            llama_tensor_dequantize_internal(&slab, f32_buf, workers, n*slice_elements, nthread);
+            size_t slab_size = 0;
+            do_quantize(nthread, &slab, new_type, (const float *)f32_buf.data(), new_data + first*slice_out_bytes,
+                    imatrix ? imatrix + first*n_per_row : nullptr, workers, slab_size, chunk_size_multiplier, params);
+            new_size += slab_size;
+        }
+    } else {
+        const int64_t nrows         = ggml_nrows(tensor);
+        const size_t  row_out_bytes = ggml_row_size(new_type, n_per_row);
+        const int64_t group = std::lcm<int64_t>(interleaved_properties(tensor->type).second, chunk_size_multiplier);
+        int64_t rows_per_slab = std::max<int64_t>(group, max_slab_elements/n_per_row);
+        rows_per_slab -= rows_per_slab % group;
+        for (int64_t first = 0; first < nrows; first += rows_per_slab) {
+            const int64_t n = std::min(rows_per_slab, nrows - first);
+            slab.ne[1] = n;
+            slab.ne[2] = 1;
+            slab.ne[3] = 1;
+            slab.data  = (char *)tensor->data + first*tensor->nb[1];
+            llama_tensor_dequantize_internal(&slab, f32_buf, workers, n*n_per_row, nthread);
+            size_t slab_size = 0;
+            do_quantize(nthread, &slab, new_type, (const float *)f32_buf.data(), new_data + first*row_out_bytes,
+                    imatrix, workers, slab_size, chunk_size_multiplier, params);
+            new_size += slab_size;
+        }
+    }
+}
+
 static void llama_model_quantize_internal(const std::string & fname_inp, const std::string & fname_out, const llama_model_quantize_params * params) {
     ggml_type default_type;
     llama_ftype ftype = params->ftype;
@@ -1092,10 +1147,12 @@ static void llama_model_quantize_internal(const std::string & fname_inp, const s
         case LLAMA_FTYPE_MOSTLY_MXFP4:   default_type = GGML_TYPE_MXFP4;   break;
         case LLAMA_FTYPE_MOSTLY_MXFP4_R8:default_type = GGML_TYPE_MXFP4_R8;break;
         case LLAMA_FTYPE_MOSTLY_Q1_0_G128: default_type = GGML_TYPE_Q1_0_G128; break;
+        case LLAMA_FTYPE_MOSTLY_Q1_0_G128_R8: default_type = GGML_TYPE_Q1_0_G128_R8; break;
         case LLAMA_FTYPE_MOSTLY_IQ4_XS:  default_type = GGML_TYPE_IQ4_XS;  break;
         case LLAMA_FTYPE_MOSTLY_IQ4_KS:  default_type = GGML_TYPE_IQ4_KS;  break;
         case LLAMA_FTYPE_MOSTLY_IQ4_KS_R4:default_type = GGML_TYPE_IQ4_KS_R4;break;
         case LLAMA_FTYPE_MOSTLY_IQ5_KS_R4:default_type = GGML_TYPE_IQ5_KS_R4;break;
+        case LLAMA_FTYPE_MOSTLY_IQ4_KS_R16:default_type = GGML_TYPE_IQ4_KS_R16;break;
         case LLAMA_FTYPE_MOSTLY_IQ4_KSS: default_type = GGML_TYPE_IQ4_KSS; break;
         case LLAMA_FTYPE_MOSTLY_IQ5_KS:  default_type = GGML_TYPE_IQ5_KS;  break;
         case LLAMA_FTYPE_MOSTLY_IQ2_K:   default_type = GGML_TYPE_IQ2_K;   break;
@@ -1118,6 +1175,11 @@ static void llama_model_quantize_internal(const std::string & fname_inp, const s
         case LLAMA_FTYPE_MOSTLY_Q4_0_8_8: default_type = GGML_TYPE_Q4_0_8_8; break;
 
         default: throw std::runtime_error(format("invalid output file type %d\n", ftype));
+    }
+
+    if (params->custom_quants && !ggml_is_quantized(default_type)) {
+        LLAMA_LOG_WARN("%s: ignoring --custom-q rules because default type %s is not quantized\n",
+                __func__, ggml_type_name(default_type));
     }
 
     int nthread = params->nthread;
@@ -1286,12 +1348,12 @@ static void llama_model_quantize_internal(const std::string & fname_inp, const s
     //  - qs.n_attention_wv == 3 * model.hparams.n_layer for Encoder-Decoder models
     //  - model.arch == LLM_ARCH_DECI                    for Deci-Nemotron   models
     //
-    GGML_ASSERT((qs.n_attention_wv == 0 ||
-                 qs.n_attention_wv == (int)model.hparams.n_layer ||
-                 qs.n_attention_wv == 3 * (int)model.hparams.n_layer ||
-                 model.arch == LLM_ARCH_DECI ||
-                 model.arch == LLM_ARCH_GEMMA4 ||
-                 model.arch == LLM_ARCH_UNKNOWN) && "n_attention_wv is unexpected");
+    //GGML_ASSERT((qs.n_attention_wv == 0 ||
+    //             qs.n_attention_wv == (int)model.hparams.n_layer ||
+    //             qs.n_attention_wv == 3 * (int)model.hparams.n_layer ||
+    //             model.arch == LLM_ARCH_DECI ||
+    //             model.arch == LLM_ARCH_GEMMA4 ||
+    //             model.arch == LLM_ARCH_UNKNOWN) && "n_attention_wv is unexpected");
 
     size_t total_size_org = 0;
     size_t total_size_new = 0;
@@ -1485,6 +1547,7 @@ static void llama_model_quantize_internal(const std::string & fname_inp, const s
         // do not quantize Mamba's small yet 2D weights
         // NOTE: can't use LLM_TN here because the layer number is not known
         quantize &= name.find("ssm_conv1d")        == std::string::npos;
+        quantize &= name.find("shortconv.conv")     == std::string::npos;
         quantize &= name.find("ssm_x.weight")      == std::string::npos;
         quantize &= name.find("ssm_dt.weight")     == std::string::npos;
 
@@ -1717,13 +1780,17 @@ static void llama_model_quantize_internal(const std::string & fname_inp, const s
             if (params->dry_run) {
                 new_size = tensor->ne[2] * tensor->ne[1] * ggml_row_size(new_type, tensor->ne[0]);
             } else {
-                float * f32_data;
+                float * f32_data = nullptr;
+
+                const bool is_extra_output = params->extra_output_type != GGML_TYPE_COUNT && tensor == output_tensor;
+                const bool use_slabs = params->slab_size > 0 && !is_extra_output && tensor->type != GGML_TYPE_F32 && tensor->type != GGML_TYPE_I2_S &&
+                    new_type != GGML_TYPE_Q8_K_R16 && (size_t)nelements*sizeof(float) > params->slab_size;
 
                 if (tensor->type == GGML_TYPE_F32) {
                     f32_data = (float *) tensor->data;
                 } else if (ggml_is_quantized(tensor->type) && !params->allow_requantize) {
                     throw std::runtime_error(format("requantizing from type %s is disabled", ggml_type_name(tensor->type)));
-                } else {
+                } else if (!use_slabs) {
                     llama_tensor_dequantize_internal(tensor, f32_conv_buf, workers, nelements, nthread);
                     f32_data = (float *) f32_conv_buf.data();
                 }
@@ -1736,7 +1803,10 @@ static void llama_model_quantize_internal(const std::string & fname_inp, const s
                 }
                 new_data = work.data();
 
-                if (params->extra_output_type != GGML_TYPE_COUNT && tensor == output_tensor) {
+                if (use_slabs) {
+                    do_quantize_slabbed(nthread, tensor, new_type, f32_conv_buf, (char *)new_data, imatrix, workers,
+                            new_size, chunk_size_multiplier, params);
+                } else if (is_extra_output) {
                     auto cur_size = ggml_nbytes(tensor);
                     if (new_type != tensor->type) {
                         do_quantize(nthread, tensor, new_type, f32_data, (char *)new_data, imatrix, workers,
