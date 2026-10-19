@@ -161,6 +161,12 @@ typedef sycl::half2 ggml_half2;
 #define QI_MXFP4 (QK_MXFP4 / (4 * QR_MXFP4))
 #define QR_MXFP4 2
 
+#define QI2_0 (QK2_0 / 32)
+#define QR2_0 1
+
+#define PQI2_0 (QK_PQ2_0 / (4*PQR2_0))
+#define PQR2_0 8
+
 #endif // GGML_COMMON_DECL_CUDA || GGML_COMMON_DECL_HIP
 
 #define QK4_0 32
@@ -169,6 +175,13 @@ typedef struct {
     uint8_t qs[QK4_0 / 2]; // nibbles / quants
 } block_q4_0;
 static_assert(sizeof(block_q4_0) == sizeof(ggml_half) + QK4_0 / 2, "wrong q4_0 block size/padding");
+
+#define QK2_0 64
+typedef struct {
+    ggml_half d;              // delta (scale)
+    uint8_t qs[QK2_0 / 4];    // 2 bits per element, {0,1,2,3} -> {-1,0,1,2} * d
+} block_q2_0;
+static_assert(sizeof(block_q2_0) == sizeof(ggml_half) + QK2_0 / 4, "wrong q2_0 block size/padding");
 
 #define QK4_1 32
 typedef struct {
@@ -570,6 +583,30 @@ typedef struct {
 } block_q1_0_g128_r8;
 static_assert(sizeof(block_q1_0_g128_r8) == QK1_0_G128_R8_ROWS*sizeof(ggml_half) + QK1_0_G128, "wrong q1_0_g128_r8 block size/padding");
 
+// Prism ternary formats (PQ2_0 / PTQ1_0)
+#define QK_PQ2_0 128
+typedef struct {
+    ggml_half d;                  // delta (scale)
+    uint8_t   qs[QK_PQ2_0 / 4];   // 2 bits per weight
+} block_pq2_0;
+static_assert(sizeof(block_pq2_0) == sizeof(ggml_half) + QK_PQ2_0 / 4, "wrong pq2_0 block size/padding");
+
+#define QK_PTQ1_0 128
+typedef struct {
+    uint8_t   qs[(QK_PTQ1_0 - 4*QK_PTQ1_0/64)/5]; // 5 base-3 trits per byte
+    uint8_t   qh[QK_PTQ1_0/64];                    // high trits
+    ggml_half d;                                   // delta (scale)
+} block_ptq1_0;
+static_assert(sizeof(block_ptq1_0) == 28, "wrong ptq1_0 block size/padding");
+
+// 8-row repacked PQ2_0 (Prism ternary, 2-bit); bit pair j maps onto a Q8_K128 32-element plane.
+#define QK_PQ2_0_R8_ROWS 8
+typedef struct {
+    ggml_half d[QK_PQ2_0_R8_ROWS];
+    uint8_t   qs[QK_PQ2_0_R8_ROWS*(QK_PQ2_0/4)];
+} block_pq2_0_r8;
+static_assert(sizeof(block_pq2_0_r8) == QK_PQ2_0_R8_ROWS*sizeof(block_pq2_0), "wrong pq2_0_r8 block size/padding");
+
 //
 // Bitnet and TriLM - implemented as 1.625 bpw
 //
@@ -579,6 +616,14 @@ typedef struct {
     uint8_t extra;
 } block_iq1_bn;
 static_assert(sizeof(block_iq1_bn) == 13, "wrong iq1_bn block size/padding");
+
+// 8-row repacked PTQ1_0 (Prism ternary, base-3); each row is two IQ1_BN sub-blocks.
+#define QK_PTQ1_0_R8_ROWS 8
+typedef struct {
+    ggml_half    d[QK_PTQ1_0_R8_ROWS];
+    block_iq1_bn qs[QK_PTQ1_0_R8_ROWS*QK_PTQ1_0/QK_IQ1BN];
+} block_ptq1_0_r8;
+static_assert(sizeof(block_ptq1_0_r8) == QK_PTQ1_0_R8_ROWS*sizeof(block_ptq1_0), "wrong ptq1_0_r8 block size/padding");
 //
 // Bitnet and TriLM - implemented as 2.0 bpw
 //
@@ -724,6 +769,16 @@ typedef struct {
     uint8_t qh[QK_K/8];
 } block_iq3_ks;
 static_assert(sizeof(block_iq3_ks) == sizeof(uint16_t) + QK_K/64 + QK_K/4 + QK_K/8, "wrong iq3_ks block size/padding");
+
+// IQ3KS_R16: 16-row interleaved IQ3_KS-class codebook 3-bit type.
+// Block = 16 rows x 32 columns = 512 quants in 204 bytes.
+typedef struct {
+    uint32_t extra;      // bit r: scale bit 4 of row r; bit 16+r: codebook page of row r
+    uint8_t  scales[8];  // low nibble: scale bits 0..3 of rows 0..7; high nibble: rows 8..15
+    uint8_t  qs[128];    // 2 low bits of the 512 quants
+    uint8_t  qh[64];     // high bit of the 512 quants
+} block_iq3_ks_r16;
+static_assert(sizeof(block_iq3_ks_r16) == 204, "wrong iq3_ks_r16 block size/padding");
 
 typedef struct {
     ggml_half d[4];

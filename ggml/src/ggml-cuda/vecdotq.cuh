@@ -33,6 +33,55 @@ static __device__ __forceinline__ int get_int_b4(const void * x, const int & i32
 // VDR = vec dot ratio, how many contiguous integers each thread processes when the vec dot kernel is called
 // MMVQ = mul_mat_vec_q, MMQ = mul_mat_q
 
+#define VDR_Q2_0_Q8_1_MMVQ 1
+#define VDR_Q2_0_Q8_1_MMQ  2
+
+static __device__ __forceinline__ float vec_dot_q2_0_q8_1(
+    const void * __restrict__ vbq, const block_q8_1 * __restrict__ bq8_1, const int & kbx, const int & iqs) {
+
+    const block_q2_0 * bq2_0 = (const block_q2_0 *) vbq + kbx;
+
+    // Q2_0 (group 64): 64 elements with ONE scale, 2 bits per element (4 elements per byte)
+    // Q8_1: 32 elements per block with individual scales
+    // iqs selects which of the 2 chunks of 32 elements to process (0-1)
+
+    const float     d2 = bq2_0->d;
+    const int16_t * qs = (const int16_t *) bq2_0->qs + iqs * 4;
+
+    // Process only the chunk specified by iqs
+    const block_q8_1 * bq8_1_chunk = bq8_1 + iqs;
+
+    int sumi = 0;
+#pragma unroll
+    for (int j = 0; j < 4; ++j) {
+        const int q  = qs[j];
+        const int u  = get_int_b4(bq8_1_chunk->qs, j*2+0);
+        const int v  = get_int_b4(bq8_1_chunk->qs, j*2+1);
+
+#if defined(GGML_USE_HIP)
+        const uint32_t qx_indices = (q & 0x03) | ((q & 0x0C) << 6) | ((q & 0x30) << 12) | ((q & 0xC0) << 18);
+        const uint32_t qy_bits    = q >> 8;
+        const uint32_t qy_indices = (qy_bits & 0x03) | ((qy_bits & 0x0C) << 6) | ((qy_bits & 0x30) << 12) | ((qy_bits & 0xC0) << 18);
+        const int qx = __builtin_amdgcn_perm(0x020100FF, 0x020100FF, qx_indices);
+        const int qy = __builtin_amdgcn_perm(0x020100FF, 0x020100FF, qy_indices);
+#else
+        // unpack even and odd crumbs into byte values
+        const int qe = __byte_perm(0x020100FF, 0x020100FF, q >> 0);
+        const int qo = __byte_perm(0x020100FF, 0x020100FF, q >> 2);
+        // unshuffle values
+        const int qx = __byte_perm(qe, qo, 0x5140);
+        const int qy = __byte_perm(qe, qo, 0x7362);
+#endif // defined(GGML_USE_HIP)
+
+        sumi = ggml_cuda_dp4a(u, qx, sumi);
+        sumi = ggml_cuda_dp4a(v, qy, sumi);
+    }
+
+    // Apply Q2_0's single scale and this chunk's Q8_1 scale
+    const float d8 = __low2float(bq8_1_chunk->ds);
+    return d2 * d8 * sumi;
+}
+
 #define VDR_Q4_0_Q8_1_MMVQ 2
 #define VDR_Q4_0_Q8_1_MMQ  4
 
@@ -1163,6 +1212,52 @@ static __device__ __forceinline__ int2 get_int_from_table_16(const int & q4, con
 static __device__ __forceinline__ int2 get_int_from_table_16(const int & q4) {
     return get_int_from_table_16(q4, kvalues_iq4nl);
 }
+
+#ifdef INT8_MMA_AVAILABLE
+// get_int_from_table_16 with each value v replaced by q = round((v + 1152 + bias)*r): a table byte (biased by 128) under a
+// 0x64 high byte is the half 1152 + v, and 1280 + q is in [1024, 2048), where the half ulp is 1 and the low byte is q.
+static __device__ __forceinline__ int2 get_int_from_table_16_q8(const int & q4, const int8_t * values,
+        const uint32_t & bias_x, const half2 & r_x, const uint32_t & bias_y, const half2 & r_y) {
+    const uint32_t * values32 = (const uint32_t *)values;
+    const uint32_t t0 = values32[0] ^ 0x80808080;
+    const uint32_t t1 = values32[1] ^ 0x80808080;
+    const uint32_t t2 = values32[2] ^ 0x80808080;
+    const uint32_t t3 = values32[3] ^ 0x80808080;
+    const half2 magic = __float2half2_rn(1280.0f);
+
+    const uint32_t mask = 0x32103210 | ((q4 & 0x88888888) >> 1);
+    // bytes of v3: low nibble 0, high nibble 0, low nibble 1, high nibble 1
+    const uint32_t v3 = __byte_perm(__byte_perm(t0, t1, q4),       __byte_perm(t2, t3, q4),       mask);
+    const uint32_t v4 = __byte_perm(__byte_perm(t0, t1, q4 >> 16), __byte_perm(t2, t3, q4 >> 16), mask >> 16);
+
+    uint32_t x01 = __byte_perm(v3, 0x64646464, 0x4240);
+    uint32_t y01 = __byte_perm(v3, 0x64646464, 0x4341);
+    uint32_t x23 = __byte_perm(v4, 0x64646464, 0x4240);
+    uint32_t y23 = __byte_perm(v4, 0x64646464, 0x4341);
+
+    *(half2 *)&x01 = __hfma2(__hadd2(*(half2 *)&x01, *(const half2 *)&bias_x), r_x, magic);
+    *(half2 *)&x23 = __hfma2(__hadd2(*(half2 *)&x23, *(const half2 *)&bias_x), r_x, magic);
+    *(half2 *)&y01 = __hfma2(__hadd2(*(half2 *)&y01, *(const half2 *)&bias_y), r_y, magic);
+    *(half2 *)&y23 = __hfma2(__hadd2(*(half2 *)&y23, *(const half2 *)&bias_y), r_y, magic);
+
+    return make_int2(__byte_perm(x01, x23, 0x6420), __byte_perm(y01, y23, 0x6420));
+}
+
+// round(v*r) for 4 int8 values the same way, r equal in both halves, results must fit int8
+static __device__ __forceinline__ int requant_int_q8(const int & v, const half2 & r) {
+    const uint32_t u = v ^ 0x80808080;
+    const uint32_t bias = 0xe480e480; // -1152
+    const half2 magic = __float2half2_rn(1280.0f);
+
+    uint32_t x02 = __byte_perm(u, 0x64646464, 0x4240);
+    uint32_t x13 = __byte_perm(u, 0x64646464, 0x4341);
+
+    *(half2 *)&x02 = __hfma2(__hadd2(*(half2 *)&x02, *(const half2 *)&bias), r, magic);
+    *(half2 *)&x13 = __hfma2(__hadd2(*(half2 *)&x13, *(const half2 *)&bias), r, magic);
+
+    return __byte_perm(x02, x13, 0x6240);
+}
+#endif // INT8_MMA_AVAILABLE
 
 #define VDR_IQ4_NL_Q8_1_MMVQ 2
 #define VDR_IQ4_NL_Q8_1_MMQ  4

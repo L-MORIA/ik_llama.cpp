@@ -1,4 +1,5 @@
 #include "server-task.h"
+#include "server-decision.h"
 #include "server-queue.h"
 #include "speculative.h"
 #include "json-schema-to-grammar.h"
@@ -64,7 +65,7 @@ struct server_slot {
     server_tokens prompt_tokens;
     server_tokens cache_tokens;
 
-    int32_t last_gentxt_size = 0;
+    int32_t last_gentxt_len = 0;
     std::string generated_text;
 
     // idx of draft tokens in the main batch
@@ -87,7 +88,7 @@ struct server_slot {
 
     std::string oaicompat_model;
     std::string stopping_word;
-    stop_type stop;
+    stop_type stop = STOP_TYPE_NONE;
 
     // For context rewind/ token buffer
     size_t n_buffer = 0;
@@ -101,7 +102,7 @@ struct server_slot {
     completion_token_outputs token_buffer;
     float ban_phrases_bias = 0;
     int32_t banned_n = 1;
-	std::map<int32_t, std::set<llama_token>> positional_bans;
+    std::map<int32_t, std::set<llama_token>> positional_bans;
 
     // allowlist
     std::vector<std::vector<std::tuple<uint32_t, uint32_t, std::string, float>>> allow_rules_prev;
@@ -255,6 +256,8 @@ struct server_context {
     // multimodal
     mtmd_context* mctx = nullptr;
 
+    server_decision_context decision;
+
     int32_t n_ctx; // total context for all clients / slots
 
     // system prompt
@@ -332,6 +335,8 @@ struct server_context {
 
     void send_embedding(const server_slot& slot, const llama_batch& batch);
 
+    void send_decision(const server_slot& slot, int32_t i_batch);
+
     void apply_server_biases(server_slot& slot);
 
     void request_completion(int id_task, int id_multi, json data, bool infill, bool embedding, server_tokens & inputs);
@@ -379,6 +384,8 @@ struct server_context {
     bool has_next_token(const completion_token_output& result, server_slot& slot);
 
     void send_token_results(completion_token_outputs& results, server_slot& slot, int32_t n = 0);
+
+    void rewind_context(server_slot& slot, int32_t ban_pos);
 
     void buffer_and_check_string_ban(server_slot& slot, completion_token_output& result);
 

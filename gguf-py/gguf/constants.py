@@ -93,6 +93,7 @@ class Keys:
         EXPERT_GROUP_USED_COUNT           = "{arch}.expert_group_used_count"
         EXPERT_WEIGHTS_SCALE              = "{arch}.expert_weights_scale"
         EXPERT_WEIGHTS_NORM               = "{arch}.expert_weights_norm"
+        SWIGLU_CLAMP_EXP                  = "{arch}.swiglu_clamp_exp"
         EXPERT_GATING_FUNC                = "{arch}.expert_gating_func"
         NEXTN_PREDICT_LAYERS              = "{arch}.nextn_predict_layers"
         POOLING_TYPE                      = "{arch}.pooling_type"
@@ -215,6 +216,10 @@ class Keys:
         CHUNK_SIZE  = "imatrix.chunk_size"
         DATASETS    = "imatrix.datasets"
 
+    class Nanbeige:
+        NUM_LOOPS            = "{arch}.num_loops"
+        SKIP_LOOP_FINAL_NORM = "{arch}.skip_loop_final_norm"
+
 #
 # recommended mapping of model tensor names for storage in gguf
 #
@@ -228,6 +233,7 @@ class GGUFType:
 
 class MODEL_ARCH(IntEnum):
     LLAMA        = auto()
+    NANBEIGE     = auto()
     DECI         = auto()
     FALCON       = auto()
     BAICHUAN     = auto()
@@ -294,6 +300,7 @@ class MODEL_ARCH(IntEnum):
     LAGUNA       = auto()
     LFM2         = auto()
     LFM2MOE      = auto()
+    MAPLE        = auto()
 
 
 class MODEL_TENSOR(IntEnum):
@@ -477,6 +484,7 @@ class MODEL_TENSOR(IntEnum):
 
 MODEL_ARCH_NAMES: dict[MODEL_ARCH, str] = {
     MODEL_ARCH.LLAMA:          "llama",
+    MODEL_ARCH.NANBEIGE:       "nanbeige",
     MODEL_ARCH.DECI:           "deci",
     MODEL_ARCH.FALCON:         "falcon",
     MODEL_ARCH.BAICHUAN:       "baichuan",
@@ -543,6 +551,7 @@ MODEL_ARCH_NAMES: dict[MODEL_ARCH, str] = {
     MODEL_ARCH.LAGUNA:         "laguna",
     MODEL_ARCH.LFM2:           "lfm2",
     MODEL_ARCH.LFM2MOE:        "lfm2moe",
+    MODEL_ARCH.MAPLE:          "maple",
 }
 
 TENSOR_NAMES: dict[MODEL_TENSOR, str] = {
@@ -1311,6 +1320,23 @@ MODEL_TENSORS: dict[MODEL_ARCH, list[MODEL_TENSOR]] = {
         MODEL_TENSOR.FFN_GATE_UP_EXP,
         MODEL_TENSOR.FFN_EXP_PROBS_B,
     ],
+    MODEL_ARCH.MAPLE: [
+        MODEL_TENSOR.TOKEN_EMBD,
+        MODEL_TENSOR.OUTPUT_NORM,
+        MODEL_TENSOR.OUTPUT,
+        MODEL_TENSOR.ATTN_NORM,
+        MODEL_TENSOR.ATTN_Q,
+        MODEL_TENSOR.ATTN_Q_NORM,
+        MODEL_TENSOR.ATTN_K,
+        MODEL_TENSOR.ATTN_K_NORM,
+        MODEL_TENSOR.ATTN_V,
+        MODEL_TENSOR.ATTN_OUT,
+        MODEL_TENSOR.FFN_NORM,
+        MODEL_TENSOR.FFN_GATE_INP,
+        MODEL_TENSOR.FFN_GATE_EXP,
+        MODEL_TENSOR.FFN_DOWN_EXP,
+        MODEL_TENSOR.FFN_UP_EXP,
+    ],
     MODEL_ARCH.MAMBA: [
         MODEL_TENSOR.TOKEN_EMBD,
         MODEL_TENSOR.OUTPUT_NORM,
@@ -2031,6 +2057,8 @@ MODEL_TENSOR_SKIP: dict[MODEL_ARCH, list[MODEL_TENSOR]] = {
     ],
 }
 
+MODEL_TENSORS[MODEL_ARCH.NANBEIGE] = MODEL_TENSORS[MODEL_ARCH.LLAMA]  # same tensor names
+
 #
 # types
 #
@@ -2104,6 +2132,10 @@ class GGMLQuantizationType(IntEnum):
     IQ4_K     = 139
     IQ5_K     = 140
     IQ6_K     = 141
+    PQ2_0     = 142
+    PTQ1_0    = 143
+    PQ2_0_R8  = 160
+    PTQ1_0_R8 = 161
     IQ4_KS    = 144
     IQ2_KS    = 145
     IQ4_KSS   = 146
@@ -2119,6 +2151,7 @@ class GGMLQuantizationType(IntEnum):
     IQ3_KS    = 156
     IQ2_KL    = 157
     IQ1_KT    = 158
+    IQ3KS_R16 = 354
     Q4_0_R8   = 202
     Q5_0_R4   = 206
     Q8_0_R8   = 208
@@ -2144,6 +2177,8 @@ class GGMLQuantizationType(IntEnum):
     IQ4_K_R4  = 339
     IQ5_K_R4  = 340
     IQ4_KS_R4 = 344
+    IQ4_KS_R16= 345
+    IQ3_KS_R16= 346
     IQ5_KS_R4 = 352
     Q8_KV_R8  = 398
     Q8_K_R8   = 399
@@ -2216,6 +2251,8 @@ class LlamaFileType(IntEnum):
     MOSTLY_IQ3_KS        = 154 #except 1d tensors
     MOSTLY_IQ2_KL        = 155 #except 1d tensors
     MOSTLY_IQ1_KT        = 156 #except 1d tensors
+    MOSTLY_PQ2_0         = 157 #except 1d tensors  (Prism ternary, group-128)
+    MOSTLY_PTQ1_0        = 158 #except 1d tensors  (Prism ternary, base-3)
 
     MOSTLY_Q4_0_R8       = 202 #except 1d tensors
     MOSTLY_Q8_0_R8       = 207 #except 1d tensors
@@ -2337,6 +2374,10 @@ GGML_QUANT_SIZES: dict[GGMLQuantizationType, tuple[int, int]] = {
     GGMLQuantizationType.IQ4_K       : ( 256,  144),
     GGMLQuantizationType.IQ5_K       : ( 256,  176),
     GGMLQuantizationType.IQ6_K       : ( 256,  212),
+    GGMLQuantizationType.PQ2_0       : ( 128,   34),
+    GGMLQuantizationType.PTQ1_0      : ( 128,   28),
+    GGMLQuantizationType.PQ2_0_R8    : ( 128,   34),
+    GGMLQuantizationType.PTQ1_0_R8   : ( 128,   28),
     GGMLQuantizationType.IQ4_KS      : ( 256,  136),
     GGMLQuantizationType.IQ2_KS      : ( 256,   70),
     GGMLQuantizationType.IQ4_KSS     : ( 256,  128),
@@ -2378,6 +2419,8 @@ GGML_QUANT_SIZES: dict[GGMLQuantizationType, tuple[int, int]] = {
     GGMLQuantizationType.IQ5_K_R4    : ( 256,  176),
     GGMLQuantizationType.IQ4_KS_R4   : ( 256,  136),
     GGMLQuantizationType.IQ5_KS_R4   : ( 256,  168),
+    GGMLQuantizationType.IQ3_KS_R16  : (  32,   13),
+    GGMLQuantizationType.IQ4_KS_R16  : (  32,   17),
     GGMLQuantizationType.Q8_KV_R8    : (  32,   32),
     GGMLQuantizationType.Q8_K_R8     : ( 256,  258),
 }
@@ -2397,6 +2440,7 @@ GGML_ROW_META_SIZES: dict[GGMLQuantizationType, int] = {
     GGMLQuantizationType.IQ4_KSS     :  4,
     GGMLQuantizationType.IQ5_KS      :  4,
     GGMLQuantizationType.IQ5_KS_R4   :  4,
+    GGMLQuantizationType.IQ3KS_R16   :  4,
     GGMLQuantizationType.IQ1_KT      :  4,
     GGMLQuantizationType.IQ2_KT      :  4,
     GGMLQuantizationType.IQ3_KT      :  4,
@@ -2404,6 +2448,8 @@ GGML_ROW_META_SIZES: dict[GGMLQuantizationType, int] = {
     GGMLQuantizationType.Q8_KV       :  8,
     GGMLQuantizationType.Q8_KV_R8    :  4,
     GGMLQuantizationType.Q8_K16      : 20,
+    GGMLQuantizationType.IQ3_KS_R16  :  4,
+    GGMLQuantizationType.IQ4_KS_R16  :  4,
 }
 
 
