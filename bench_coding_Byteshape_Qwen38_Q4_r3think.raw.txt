@@ -1,0 +1,11 @@
+port=8090 model=Byteshape_Qwen38_Q4 ids=['Byteshape_Qwen38_Q4'] tasks=8 think=True
+{"model": "Byteshape_Qwen38_Q4", "port": 8090, "task_id": "HumanEval/20", "passed": true, "error": "", "wall_s": 21.52, "gen_tokens": 542, "gen_tps": 26.55, "prompt_tokens": 204, "has_content": true, "reasoning_chars": 0, "code_chars": 783}
+{"model": "Byteshape_Qwen38_Q4", "port": 8090, "task_id": "HumanEval/33", "passed": true, "error": "", "wall_s": 20.37, "gen_tokens": 525, "gen_tps": 26.56, "prompt_tokens": 188, "has_content": true, "reasoning_chars": 0, "code_chars": 235}
+{"model": "Byteshape_Qwen38_Q4", "port": 8090, "task_id": "HumanEval/81", "passed": true, "error": "", "wall_s": 24.34, "gen_tokens": 618, "gen_tps": 26.23, "prompt_tokens": 314, "has_content": true, "reasoning_chars": 0, "code_chars": 804}
+{"model": "Byteshape_Qwen38_Q4", "port": 8090, "task_id": "HumanEval/123", "passed": true, "error": "", "wall_s": 30.99, "gen_tokens": 799, "gen_tps": 26.44, "prompt_tokens": 272, "has_content": true, "reasoning_chars": 0, "code_chars": 1144}
+{"model": "Byteshape_Qwen38_Q4", "port": 8090, "task_id": "HumanEval/125", "passed": true, "error": "", "wall_s": 36.79, "gen_tokens": 956, "gen_tps": 26.47, "prompt_tokens": 177, "has_content": true, "reasoning_chars": 0, "code_chars": 316}
+{"model": "Byteshape_Qwen38_Q4", "port": 8090, "task_id": "HumanEval/136", "passed": true, "error": "", "wall_s": 17.55, "gen_tokens": 448, "gen_tps": 26.53, "prompt_tokens": 178, "has_content": true, "reasoning_chars": 0, "code_chars": 229}
+{"model": "Byteshape_Qwen38_Q4", "port": 8090, "task_id": "HumanEval/145", "passed": false, "error": "SyntaxError: unterminated string literal (detected at line 23)", "wall_s": 78.55, "gen_tokens": 2048, "gen_tps": 26.28, "prompt_tokens": 161, "has_content": true, "reasoning_chars": 0, "code_chars": 5232}
+{"model": "Byteshape_Qwen38_Q4", "port": 8090, "task_id": "HumanEval/146", "passed": true, "error": "", "wall_s": 27.34, "gen_tokens": 704, "gen_tps": 26.47, "prompt_tokens": 164, "has_content": true, "reasoning_chars": 0, "code_chars": 276}
+
+=== Byteshape_Qwen38_Q4: pass@8 = 7/8 (87.5%) ===

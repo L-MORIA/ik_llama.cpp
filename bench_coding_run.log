@@ -1,0 +1,142 @@
+[17:25:55] ===== Kwaipilot (Kwaipilot_KAT_Coder) =====
+[17:26:35]   server ready after 12s
+[17:26:36]   bench wall: 0 min
+[17:26:36]   killed llama-server PID 21592 on 8090
+[17:26:40] === SUMMARY ===
+[17:26:40] 
+[17:26:40] saved: F:\ik_llama.cpp\bench_coding_results.json
+[17:30:11] ===== Kwaipilot (Kwaipilot_KAT_Coder) =====
+[17:30:13]   killed llama-server PID 13412 on 8090
+[17:30:34]   ready: Kwaipilot_KAT_Coder after 3s (ids: Kwaipilot_KAT_Coder)
+[17:30:40]   bench rc=0 wall=0.1 min
+[17:30:40]   | {"model": "Kwaipilot_KAT_Coder", "port": 8090, "task_id": "HumanEval/112", "passed": true, "error": "", "wall_s": 0.94, "gen_tokens": 52, "gen_tps": 98.74, "prompt_tokens": 203, "has_content": true, "reasoning_chars": 0, "code_chars": 155}
+[17:30:40]   | 
+[17:30:40]   | === Kwaipilot_KAT_Coder: pass@3 = 3/3 (100.0%) ===
+[17:30:41]   RESULT: 3/3 (100%) avg gen t/s = 98.38
+[17:30:41]   killed llama-server PID 2372 on 8090
+[17:30:46] === SUMMARY ===
+[17:30:46]   Kwaipilot  Kwaipilot_KAT_Coder    3/3 (100%)  gen 98,38 t/s  1,77 s/task
+[17:30:46] saved: F:\ik_llama.cpp\bench_coding_results.json
+[17:31:07] ===== Byteshape (Byteshape_Qwen38_Q4) =====
+[17:31:44]   ready: Byteshape_Qwen38_Q4 after 6s (ids: Byteshape_Qwen38_Q4)
+[17:34:03]   bench rc=0 wall=2.3 min
+[17:34:03]   | {"model": "Byteshape_Qwen38_Q4", "port": 8090, "task_id": "HumanEval/159", "passed": true, "error": "", "wall_s": 2.99, "gen_tokens": 60, "gen_tps": 27.08, "prompt_tokens": 341, "has_content": true, "reasoning_chars": 0, "code_chars": 208}
+[17:34:03]   | 
+[17:34:03]   | === Byteshape_Qwen38_Q4: pass@20 = 20/20 (100.0%) ===
+[17:34:03]   RESULT: 20/20 (100%) avg gen t/s = 26.82
+[17:34:04]   killed llama-server PID 26424 on 8090
+[17:34:09] ===== ISTA (ISTA_Qwen38_100K) =====
+[17:34:56]   ready: ISTA_Qwen38_100K after 9s (ids: ISTA_Qwen38_100K)
+[17:36:55]   bench rc=0 wall=2 min
+[17:36:55]   | {"model": "ISTA_Qwen38_100K", "port": 8090, "task_id": "HumanEval/159", "passed": true, "error": "", "wall_s": 14.2, "gen_tokens": 362, "gen_tps": 27.12, "prompt_tokens": 341, "has_content": true, "reasoning_chars": 0, "code_chars": 1202}
+[17:36:55]   | 
+[17:36:55]   | === ISTA_Qwen38_100K: pass@20 = 20/20 (100.0%) ===
+[17:36:55]   RESULT: 20/20 (100%) avg gen t/s = 27.59
+[17:36:55]   killed llama-server PID 27072 on 8090
+[17:37:00] ===== Kwaipilot (Kwaipilot_KAT_Coder) =====
+[17:37:22]   ready: Kwaipilot_KAT_Coder after 3s (ids: Kwaipilot_KAT_Coder)
+[17:37:55]   bench rc=0 wall=0.6 min
+[17:37:55]   | {"model": "Kwaipilot_KAT_Coder", "port": 8090, "task_id": "HumanEval/159", "passed": true, "error": "", "wall_s": 0.96, "gen_tokens": 36, "gen_tps": 99.16, "prompt_tokens": 341, "has_content": true, "reasoning_chars": 0, "code_chars": 113}
+[17:37:55]   | 
+[17:37:55]   | === Kwaipilot_KAT_Coder: pass@20 = 20/20 (100.0%) ===
+[17:37:55]   RESULT: 20/20 (100%) avg gen t/s = 97.98
+[17:37:55]   killed llama-server PID 26040 on 8090
+[17:38:00] ===== MiMo (MiMo_9B_Qwen) =====
+[17:38:28]   ready: MiMo_9B_Qwen after 3s (ids: MiMo_9B_Qwen)
+[17:39:50]   bench rc=0 wall=1.4 min
+[17:39:50]   | {"model": "MiMo_9B_Qwen", "port": 8090, "task_id": "HumanEval/159", "passed": true, "error": "", "wall_s": 6.26, "gen_tokens": 329, "gen_tps": 55.34, "prompt_tokens": 338, "has_content": true, "reasoning_chars": 0, "code_chars": 1065}
+[17:39:50]   | 
+[17:39:50]   | === MiMo_9B_Qwen: pass@20 = 15/20 (75.0%) ===
+[17:39:50]   RESULT: 15/20 (75%) avg gen t/s = 55.97
+[17:39:50]   killed llama-server PID 16540 on 8090
+[17:39:55] ===== Tiel (Tiel_Coder_35B) =====
+[17:40:29]   ready: Tiel_Coder_35B after 6s (ids: Tiel_Coder_35B)
+[17:41:14]   bench rc=0 wall=0.7 min
+[17:41:14]   | {"model": "Tiel_Coder_35B", "port": 8090, "task_id": "HumanEval/159", "passed": true, "error": "", "wall_s": 1.32, "gen_tokens": 36, "gen_tps": 93.1, "prompt_tokens": 519, "has_content": true, "reasoning_chars": 0, "code_chars": 113}
+[17:41:14]   | 
+[17:41:14]   | === Tiel_Coder_35B: pass@20 = 20/20 (100.0%) ===
+[17:41:14]   RESULT: 20/20 (100%) avg gen t/s = 91.42
+[17:41:14]   killed llama-server PID 28056 on 8090
+[17:41:19] === SUMMARY ===
+[17:41:19]   Byteshape  Byteshape_Qwen38_Q4    20/20 (100%)  gen 26,82 t/s  6,83 s/task
+[17:41:19]   ISTA       ISTA_Qwen38_100K       20/20 (100%)  gen 27,59 t/s  5,83 s/task
+[17:41:19]   Kwaipilot  Kwaipilot_KAT_Coder    20/20 (100%)  gen 97,98 t/s  1,56 s/task
+[17:41:19]   MiMo       MiMo_9B_Qwen           15/20 (75%)  gen 55,97 t/s  2,97 s/task
+[17:41:19]   Tiel       Tiel_Coder_35B         20/20 (100%)  gen 91,42 t/s  2,1 s/task
+[17:41:19] saved: F:\ik_llama.cpp\bench_coding_results.json
+[17:42:37] ===== Byteshape (Byteshape_Qwen38_Q4) =====
+[17:43:00]   ready: Byteshape_Qwen38_Q4 after 3s (ids: Byteshape_Qwen38_Q4)
+[17:50:52]   bench rc=0 wall=7.9 min
+[17:50:52]   | {"model": "Byteshape_Qwen38_Q4", "port": 8090, "task_id": "HumanEval/162", "passed": true, "error": "", "wall_s": 4.8, "gen_tokens": 116, "gen_tps": 26.89, "prompt_tokens": 125, "has_content": true, "reasoning_chars": 0, "code_chars": 334}
+[17:50:52]   | 
+[17:50:52]   | === Byteshape_Qwen38_Q4: pass@60 = 57/60 (95.0%) ===
+[17:50:52]   RESULT: 57/60 (95%) avg gen t/s = 26.79
+[17:50:52]   killed llama-server PID 21816 on 8090
+[17:50:57] ===== ISTA (ISTA_Qwen38_100K) =====
+[17:51:26]   ready: ISTA_Qwen38_100K after 3s (ids: ISTA_Qwen38_100K)
+[17:58:25]   bench rc=0 wall=7 min
+[17:58:25]   | {"model": "ISTA_Qwen38_100K", "port": 8090, "task_id": "HumanEval/162", "passed": true, "error": "", "wall_s": 4.67, "gen_tokens": 116, "gen_tps": 27.8, "prompt_tokens": 125, "has_content": true, "reasoning_chars": 0, "code_chars": 334}
+[17:58:25]   | 
+[17:58:25]   | === ISTA_Qwen38_100K: pass@60 = 55/60 (91.7%) ===
+[17:58:25]   RESULT: 55/60 (91.7%) avg gen t/s = 27.68
+[17:58:25]   killed llama-server PID 25328 on 8090
+[17:58:30] ===== Kwaipilot (Kwaipilot_KAT_Coder) =====
+[17:58:51]   ready: Kwaipilot_KAT_Coder after 3s (ids: Kwaipilot_KAT_Coder)
+[18:00:52]   bench rc=0 wall=2 min
+[18:00:52]   | {"model": "Kwaipilot_KAT_Coder", "port": 8090, "task_id": "HumanEval/162", "passed": true, "error": "", "wall_s": 1.54, "gen_tokens": 117, "gen_tps": 97.16, "prompt_tokens": 125, "has_content": true, "reasoning_chars": 0, "code_chars": 337}
+[18:00:52]   | 
+[18:00:52]   | === Kwaipilot_KAT_Coder: pass@60 = 57/60 (95.0%) ===
+[18:00:52]   RESULT: 57/60 (95%) avg gen t/s = 97.61
+[18:00:52]   killed llama-server PID 25084 on 8090
+[18:00:57] ===== MiMo (MiMo_9B_Qwen) =====
+[18:01:12]   ready: MiMo_9B_Qwen after 0s (ids: MiMo_9B_Qwen)
+[18:04:33]   bench rc=0 wall=3.3 min
+[18:04:33]   | {"model": "MiMo_9B_Qwen", "port": 8090, "task_id": "HumanEval/162", "passed": true, "error": "", "wall_s": 2.27, "gen_tokens": 115, "gen_tps": 56.41, "prompt_tokens": 122, "has_content": true, "reasoning_chars": 0, "code_chars": 333}
+[18:04:33]   | 
+[18:04:33]   | === MiMo_9B_Qwen: pass@60 = 47/60 (78.3%) ===
+[18:04:33]   RESULT: 47/60 (78.3%) avg gen t/s = 56.14
+[18:04:33]   killed llama-server PID 11872 on 8090
+[18:04:38] ===== Tiel (Tiel_Coder_35B) =====
+[18:05:00]   ready: Tiel_Coder_35B after 3s (ids: Tiel_Coder_35B)
+[18:07:06]   bench rc=0 wall=2.1 min
+[18:07:06]   | {"model": "Tiel_Coder_35B", "port": 8090, "task_id": "HumanEval/162", "passed": true, "error": "", "wall_s": 1.1, "gen_tokens": 43, "gen_tps": 92.63, "prompt_tokens": 303, "has_content": true, "reasoning_chars": 0, "code_chars": 139}
+[18:07:06]   | 
+[18:07:06]   | === Tiel_Coder_35B: pass@60 = 53/60 (88.3%) ===
+[18:07:07]   RESULT: 53/60 (88.3%) avg gen t/s = 91.49
+[18:07:07]   killed llama-server PID 16160 on 8090
+[18:07:12] === SUMMARY ===
+[18:07:12]   Byteshape  Byteshape_Qwen38_Q4    57/60 (95%)  gen 26,79 t/s  7,76 s/task
+[18:07:12]   ISTA       ISTA_Qwen38_100K       55/60 (91,7%)  gen 27,68 t/s  6,88 s/task
+[18:07:12]   Kwaipilot  Kwaipilot_KAT_Coder    57/60 (95%)  gen 97,61 t/s  1,92 s/task
+[18:07:12]   MiMo       MiMo_9B_Qwen           47/60 (78,3%)  gen 56,14 t/s  3,18 s/task
+[18:07:12]   Tiel       Tiel_Coder_35B         53/60 (88,3%)  gen 91,49 t/s  2,02 s/task
+[18:07:12] saved: F:\ik_llama.cpp\bench_coding_results_r2.json
+[18:08:04] ===== Byteshape (Byteshape_Qwen38_Q4) =====
+[18:08:27]   ready: Byteshape_Qwen38_Q4 after 3s (ids: Byteshape_Qwen38_Q4)
+[18:12:46]   bench rc=0 wall=4.3 min
+[18:12:46]   | {"model": "Byteshape_Qwen38_Q4", "port": 8090, "task_id": "HumanEval/146", "passed": true, "error": "", "wall_s": 27.34, "gen_tokens": 704, "gen_tps": 26.47, "prompt_tokens": 164, "has_content": true, "reasoning_chars": 0, "code_chars": 276}
+[18:12:46]   | 
+[18:12:46]   | === Byteshape_Qwen38_Q4: pass@8 = 7/8 (87.5%) ===
+[18:12:46]   RESULT: 7/8 (87.5%) avg gen t/s = 26.44
+[18:12:47]   killed llama-server PID 28284 on 8090
+[18:12:52] ===== Kwaipilot (Kwaipilot_KAT_Coder) =====
+[18:13:13]   ready: Kwaipilot_KAT_Coder after 3s (ids: Kwaipilot_KAT_Coder)
+[18:13:33]   bench rc=0 wall=0.3 min
+[18:13:33]   | {"model": "Kwaipilot_KAT_Coder", "port": 8090, "task_id": "HumanEval/146", "passed": true, "error": "", "wall_s": 4.21, "gen_tokens": 370, "gen_tps": 96.62, "prompt_tokens": 164, "has_content": true, "reasoning_chars": 0, "code_chars": 391}
+[18:13:33]   | 
+[18:13:33]   | === Kwaipilot_KAT_Coder: pass@8 = 7/8 (87.5%) ===
+[18:13:33]   RESULT: 7/8 (87.5%) avg gen t/s = 97.39
+[18:13:33]   killed llama-server PID 24692 on 8090
+[18:13:38] ===== Tiel (Tiel_Coder_35B) =====
+[18:14:00]   ready: Tiel_Coder_35B after 3s (ids: Tiel_Coder_35B)
+[18:15:17]   bench rc=0 wall=1.3 min
+[18:15:17]   | {"model": "Tiel_Coder_35B", "port": 8090, "task_id": "HumanEval/146", "passed": true, "error": "", "wall_s": 7.79, "gen_tokens": 632, "gen_tps": 89.62, "prompt_tokens": 343, "has_content": true, "reasoning_chars": 0, "code_chars": 619}
+[18:15:17]   | 
+[18:15:17]   | === Tiel_Coder_35B: pass@8 = 7/8 (87.5%) ===
+[18:15:17]   RESULT: 7/8 (87.5%) avg gen t/s = 89.9
+[18:15:17]   killed llama-server PID 6416 on 8090
+[18:15:22] === SUMMARY ===
+[18:15:22]   Byteshape  Byteshape_Qwen38_Q4    7/8 (87,5%)  gen 26,44 t/s  32,17 s/task
+[18:15:22]   Kwaipilot  Kwaipilot_KAT_Coder    7/8 (87,5%)  gen 97,39 t/s  2,35 s/task
+[18:15:22]   Tiel       Tiel_Coder_35B         7/8 (87,5%)  gen 89,9 t/s  9,49 s/task
+[18:15:22] saved: F:\ik_llama.cpp\bench_coding_results_r3think.json

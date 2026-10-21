@@ -1,0 +1,11 @@
+port=8090 model=Tiel_Coder_35B ids=['Tiel_Coder_35B'] tasks=8 think=True
+{"model": "Tiel_Coder_35B", "port": 8090, "task_id": "HumanEval/20", "passed": true, "error": "", "wall_s": 4.88, "gen_tokens": 364, "gen_tps": 89.95, "prompt_tokens": 383, "has_content": true, "reasoning_chars": 0, "code_chars": 695}
+{"model": "Tiel_Coder_35B", "port": 8090, "task_id": "HumanEval/33", "passed": true, "error": "", "wall_s": 7.35, "gen_tokens": 600, "gen_tps": 90.28, "prompt_tokens": 367, "has_content": true, "reasoning_chars": 0, "code_chars": 498}
+{"model": "Tiel_Coder_35B", "port": 8090, "task_id": "HumanEval/81", "passed": true, "error": "", "wall_s": 13.9, "gen_tokens": 1157, "gen_tps": 88.66, "prompt_tokens": 493, "has_content": true, "reasoning_chars": 0, "code_chars": 804}
+{"model": "Tiel_Coder_35B", "port": 8090, "task_id": "HumanEval/123", "passed": true, "error": "", "wall_s": 5.4, "gen_tokens": 410, "gen_tps": 90.16, "prompt_tokens": 451, "has_content": true, "reasoning_chars": 0, "code_chars": 1044}
+{"model": "Tiel_Coder_35B", "port": 8090, "task_id": "HumanEval/125", "passed": true, "error": "", "wall_s": 8.04, "gen_tokens": 668, "gen_tps": 91.07, "prompt_tokens": 356, "has_content": true, "reasoning_chars": 0, "code_chars": 211}
+{"model": "Tiel_Coder_35B", "port": 8090, "task_id": "HumanEval/136", "passed": true, "error": "", "wall_s": 4.85, "gen_tokens": 377, "gen_tps": 90.48, "prompt_tokens": 357, "has_content": true, "reasoning_chars": 0, "code_chars": 657}
+{"model": "Tiel_Coder_35B", "port": 8090, "task_id": "HumanEval/145", "passed": false, "error": "AssertionError", "wall_s": 23.68, "gen_tokens": 2048, "gen_tps": 88.96, "prompt_tokens": 340, "has_content": true, "reasoning_chars": 0, "code_chars": 484}
+{"model": "Tiel_Coder_35B", "port": 8090, "task_id": "HumanEval/146", "passed": true, "error": "", "wall_s": 7.79, "gen_tokens": 632, "gen_tps": 89.62, "prompt_tokens": 343, "has_content": true, "reasoning_chars": 0, "code_chars": 619}
+
+=== Tiel_Coder_35B: pass@8 = 7/8 (87.5%) ===
