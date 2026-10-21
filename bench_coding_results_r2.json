@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Byteshape",
+    "model": "Byteshape_Qwen38_Q4",
+    "passed": 57,
+    "total": 60,
+    "pass_pct": 95.0,
+    "avg_gen_tps": 26.79,
+    "avg_wall_per_task": 7.76,
+    "bench_wall_s": 465.6,
+    "reasoning_chars": 0.0,
+    "file": "F:\\ik_llama.cpp\\bench_coding_Byteshape_Qwen38_Q4_r2.jsonl"
+  },
+  {
+    "name": "ISTA",
+    "model": "ISTA_Qwen38_100K",
+    "passed": 55,
+    "total": 60,
+    "pass_pct": 91.7,
+    "avg_gen_tps": 27.68,
+    "avg_wall_per_task": 6.88,
+    "bench_wall_s": 412.6,
+    "reasoning_chars": 0.0,
+    "file": "F:\\ik_llama.cpp\\bench_coding_ISTA_Qwen38_100K_r2.jsonl"
+  },
+  {
+    "name": "Kwaipilot",
+    "model": "Kwaipilot_KAT_Coder",
+    "passed": 57,
+    "total": 60,
+    "pass_pct": 95.0,
+    "avg_gen_tps": 97.61,
+    "avg_wall_per_task": 1.92,
+    "bench_wall_s": 115.0,
+    "reasoning_chars": 0.0,
+    "file": "F:\\ik_llama.cpp\\bench_coding_Kwaipilot_KAT_Coder_r2.jsonl"
+  },
+  {
+    "name": "MiMo",
+    "model": "MiMo_9B_Qwen",
+    "passed": 47,
+    "total": 60,
+    "pass_pct": 78.3,
+    "avg_gen_tps": 56.14,
+    "avg_wall_per_task": 3.18,
+    "bench_wall_s": 190.9,
+    "reasoning_chars": 0.0,
+    "file": "F:\\ik_llama.cpp\\bench_coding_MiMo_9B_Qwen_r2.jsonl"
+  },
+  {
+    "name": "Tiel",
+    "model": "Tiel_Coder_35B",
+    "passed": 53,
+    "total": 60,
+    "pass_pct": 88.3,
+    "avg_gen_tps": 91.49,
+    "avg_wall_per_task": 2.02,
+    "bench_wall_s": 120.9,
+    "reasoning_chars": 0.0,
+    "file": "F:\\ik_llama.cpp\\bench_coding_Tiel_Coder_35B_r2.jsonl"
+  }
+]

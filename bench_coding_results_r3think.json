@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Byteshape",
+    "model": "Byteshape_Qwen38_Q4",
+    "passed": 7,
+    "total": 8,
+    "pass_pct": 87.5,
+    "avg_gen_tps": 26.44,
+    "avg_wall_per_task": 32.17,
+    "bench_wall_s": 257.4,
+    "reasoning_chars": 0.0,
+    "file": "F:\\ik_llama.cpp\\bench_coding_Byteshape_Qwen38_Q4_r3think.jsonl"
+  },
+  {
+    "name": "Kwaipilot",
+    "model": "Kwaipilot_KAT_Coder",
+    "passed": 7,
+    "total": 8,
+    "pass_pct": 87.5,
+    "avg_gen_tps": 97.39,
+    "avg_wall_per_task": 2.35,
+    "bench_wall_s": 18.8,
+    "reasoning_chars": 0.0,
+    "file": "F:\\ik_llama.cpp\\bench_coding_Kwaipilot_KAT_Coder_r3think.jsonl"
+  },
+  {
+    "name": "Tiel",
+    "model": "Tiel_Coder_35B",
+    "passed": 7,
+    "total": 8,
+    "pass_pct": 87.5,
+    "avg_gen_tps": 89.9,
+    "avg_wall_per_task": 9.49,
+    "bench_wall_s": 75.9,
+    "reasoning_chars": 0.0,
+    "file": "F:\\ik_llama.cpp\\bench_coding_Tiel_Coder_35B_r3think.jsonl"
+  }
+]
